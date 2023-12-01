@@ -1,0 +1,12 @@
+# Name,   Type, SubType, Offset,  Size, Flags
+# Note: if you have increased the bootloader size, make sure to update the offsets to avoid overlap
+# https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/partition-tables.html?highlight=partitions%20csv
+# https://docs.espressif.com/projects/esp-idf/en/v4.2/esp32/api-reference/storage/nvs_flash.html#nvs-encryption
+nvs,      data, nvs,     0x9000,  0x4000, 
+otadata,  data, ota,     0xd000,  0x2000,
+phy_init, data, phy,     0xf000,  0x1000,
+                                # 1792k
+ota_0,    app,  ota_0,          , 0x1c0000,
+ota_1,    app,  ota_1,          , 0x1c0000,
+                                # 448k
+spiffs,   data, spiffs,         , 0x70000, 

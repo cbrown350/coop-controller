@@ -1,0 +1,13 @@
+#ifndef SDKCONFIG_LOCAL_H_
+#define SDKCONFIG_LOCAL_H_
+
+#include "sdkconfig.h"
+
+#ifdef DEBUG_BUILD_MAX_LOG_LEVEL
+#undef CONFIG_LOG_MAXIMUM_LEVEL
+#define CONFIG_LOG_MAXIMUM_LEVEL DEBUG_BUILD_MAX_LOG_LEVEL
+#endif
+
+
+
+#endif // SDKCONFIG_LOCAL_H_

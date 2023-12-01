@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Chicken1 Coop Dashboard</title>
+    <meta http-equiv="content-language" content="en_US" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+</head>
+<body>
+    <h1>Chicken Coop Monitoring</h1>
+    <p id="error-header" class="bg-danger" style="display: none; background: red"></p>
+    <p>Date and Time: <span id="datetime" class="data-value">--</span></p>
+    <p>Timezone: <span id="timezone" class="data-value">--</span></p>
+    <p>Wifi SSID: <span id="wifi" class="data-value">--</span></p>
+    <p>Signal Strength: <span id="signal" class="data-value">--</span> dBm</p>
+    <p>IP Address: <span id="ip" class="data-value">--</span></p>
+    <p>Control Box Door Status: <span id="boxDoorStatus" class="data-value">--</span></p>
+    <p>Chicken Coop Temperature: <span id="coopTemp" class="data-value">--</span>&deg;F</p>
+    <p>Outdoor Temperature: <span id="outdoorTemp" class="data-value">--</span>&deg;F</p>
+    <p>Water Temperature: <span id="waterTemp" class="data-value">--</span>&deg;F</p>
+    <p>Water Heater Status: <span id="heaterStatus" class="data-value">--</span></p>
+    <button id="heater-on">Heater On</button>
+    <button id="heater-off">Heater Off</button>
+    <p>Coop Door Status: <span id="doorStatus" class="data-value">--</span></p>
+    <button id="open-door">Open Door</button>
+    <button id="close-door">Close Door</button>
+    <button id="stop-door">Stop Door</button>
+
+    <script>
+        const setErrorMsg = (msg) => {
+            let errorHeader = document.getElementById('error-header');
+            errorHeader.textContent = msg;
+            if(msg) {
+                errorHeader.style.display = 'block';
+                document.querySelectorAll('button').forEach(b=>b.disabled = true);
+                document.querySelectorAll('.data-value').forEach(dv=>dv.classList.add('bg-danger'));
+            } else {
+                errorHeader.style.display = 'none';
+                document.querySelectorAll('button').forEach(b=>b.disabled = false);
+                document.querySelectorAll('.data-value').forEach(dv=>dv.classList.remove('bg-danger'));
+            }
+        };
+
+        const fetchData = async () => {
+            try {
+                const response = await fetch('/api/status', { signal: AbortSignal.timeout(1000) });
+                const data = await response.json();
+
+                document.getElementById('datetime').textContent = data.date + ' ' + data.time;
+                document.getElementById('timezone').textContent = data.timezone;
+                document.getElementById('wifi').textContent = data.wifiSSID;
+                document.getElementById('signal').textContent = data.signalStrength;
+                document.getElementById('ip').textContent = data.ipAddress;
+                document.getElementById('coopTemp').textContent = data.coopTemperature;
+                document.getElementById('outdoorTemp').textContent = data.outdoorTemperature;
+                document.getElementById('waterTemp').textContent = data.waterTemperature;
+                document.getElementById('doorStatus').textContent = data.coopDoorStatus;
+                document.getElementById('heaterStatus').textContent = data.waterHeaterStatus;
+                document.getElementById('boxDoorStatus').textContent = data.boxDoorStatus;
+
+                setErrorMsg('');
+            } catch (error) {
+                setErrorMsg('Error fetching data');
+                console.error('Error fetching data:', error);
+            }
+        };
+
+        fetchData(); // Fetch data immediately
+        setInterval(fetchData, 1000);
+        
+        const sendRequest = (device, status) => {
+            fetch('/api/'+device+'?'+status, {
+                signal: AbortSignal.timeout(1000),
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                //body: JSON.stringify({ status })
+            })
+            .then(response => {
+                if (!response.ok) 
+                    throw new Error('Failed to send request');
+                else
+                    fetchData();
+            })
+            .catch(error => {
+                console.error(error);
+
+            });
+        };
+
+        document.getElementById('open-door').addEventListener('click', () => sendRequest('door', 'open'));
+        document.getElementById('close-door').addEventListener('click', () => sendRequest('door', 'close'));
+        document.getElementById('stop-door').addEventListener('click', () => sendRequest('door', 'stop'));
+        document.getElementById('heater-on').addEventListener('click', () => sendRequest('heater', 'on'));
+        document.getElementById('heater-off').addEventListener('click', () => sendRequest('heater', 'off'));
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
+</body>
+</html>

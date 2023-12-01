@@ -1,0 +1,60 @@
+{
+	"name": "PlatformIO (Community)",
+	"customizations": {
+		"vscode": {
+			"settings": {
+				"terminal.integrated.defaultProfile.linux": "zsh"
+			},
+			"extensions": [
+				"ms-vscode-remote.remote-containers",
+				"ms-vscode.cpptools",
+				"platformio.platformio-ide"
+			]
+		}
+	},
+	// "dockerFile": "Dockerfile",
+	// "mounts": [
+	// 	"source=/dev/,target=/dev/,type=bind,consistency=consistent",
+	// 	"source=${localWorkspaceFolderBasename}-pio-build,target=${containerWorkspaceFolder}/.pio,type=volume",
+	// 	"source=platformio-tools,target=/home/vscode/.platformio,type=volume",
+	// 	"source=vscode-extensions,target=/home/vscode/.vscode-server/extensions,type=volume"
+	// ],
+	// "build": {
+	// 	"args": {
+	// 		"USERNAME": "vscode"
+	// 	}
+	// },
+	// "runArgs": [
+	// 	// "--device-cgroup-rule",
+	// 	// "-d /dev/bus/usb/",
+	// 	"--privileged"
+	// ],
+	"dockerComposeFile": [
+		"../.devcontainer/docker-compose.yaml"
+	],
+	"workspaceFolder": "/workspace",
+	"service": "coop_controller_workspace",
+	"overrideCommand": true,
+
+	"initializeCommand": [ ".devcontainer/host_init" ], 
+	"postAttachCommand": "sudo chmod +x .devcontainer/container_init.sh && .devcontainer/container_init.sh",
+	
+
+	"appPort": ["3500:3500"],
+	"forwardPorts": [
+		"3500"	// esp32 ota upload
+	],
+	"remote.localPortHost": "allInterfaces"
+
+	// pio upgrade --dev to use dev version of platformio
+
+	// In windows as admin:
+	//  winget install --interactive --exact dorssel.usbipd-win
+	//  usbipd wsl attach -i 10c4:ea60 (find <vendorid:productid> with usbipd wsl list, must run in admin terminal the first time, see init.cmd)
+	// In WSL:
+	// 	sudo apt install linux-tools-generic hwdata
+	// 	sudo update-alternatives --install /usr/local/bin/usbip usbip `ls /usr/lib/linux-tools/*/usbip | tail -n1` 20
+
+	// tio /dev/ttyUSB0 for serial monitor
+
+}

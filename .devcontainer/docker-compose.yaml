@@ -1,0 +1,114 @@
+version: "3.9"
+
+volumes:
+  platformio-tools:
+  vscode-extensions:
+  coop_controller_workspace-pio-build:
+
+services:
+  coop_controller_workspace:
+    build: 
+      context: .
+      dockerfile: Dockerfile 
+      args:
+        USERNAME: vscode
+    privileged: true
+    extra_hosts:
+      # Windows proxy 'Automatically Detect Settings' must be turned off for Live Server proxy to resolve REMOTE_DEVICE_IP properly
+      - "REMOTE_DEVICE_IP:${REMOTE_DEVICE_IP:-127.0.0.1}" # needed for liveServer Go Live extension to work, used in settings.json
+    environment:
+      - TZ=America/Denver
+      - GH_TOKEN=${GH_TOKEN}
+      - REMOTE_DEVICE_IP=${REMOTE_DEVICE_IP:-esp32.local} # used for OTA updates
+      - OTA_PORT=${OTA_PORT:-3500}
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - coop_controller_workspace-pio-build:/workspace/.pio:consistency
+      - platformio-tools:/home/vscode/.platformio
+      - vscode-extensions:/home/vscode/.vscode-server/extensions
+      - ..:/workspace:cached
+      - /dev/bus/usb/:/dev/bus/usb/
+    devices:
+      - /dev
+    command: /bin/sh -c "while sleep 1000; do :; done"  
+
+# https://nodered.org/docs/getting-started/docker
+  nodered:
+    image: nodered/node-red
+    ports:
+      - "1880:1880"
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ./data/nodered:/data
+    user: "${PUID}:${PGID}"
+    depends_on:
+      - mosquitto
+    environment:
+      - TZ=America/Denver
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "25m"
+        max-file: "10"
+    healthcheck:
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://nodered:1880" ]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+
+# https://iotechonline.com/password-protect-your-mosquitto-mqtt-broker/
+  mosquitto:
+    image: eclipse-mosquitto
+    restart: unless-stopped
+    ports:
+      - "1883:1883"
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ./mosquitto:/mosquitto/config
+      - ./data/mosquitto/data:/mosquitto/data
+      - ./data/mosquitto/log:/mosquitto/log
+    environment:
+      - TZ=America/Denver
+    user: "${PUID}:${PGID}"
+    logging:
+      driver: json-file
+      options:
+        max-size: "25m"
+        max-file: "10"
+  # docker exec mosquitto mosquitto_passwd -b /mosquitto/config/password.txt user password
+    healthcheck:
+      test: [ "CMD", "mosquitto_sub", "-t", "$$SYS/#", "-C", "1", "-i", "healthcheck", "-W", "3" ]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+  
+  mqtt_explorer:
+    image: smeagolworms4/mqtt-explorer
+    restart: unless-stopped
+    ports:
+      - 4000:4000
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ./data/mqtt_explorer/config:/mqtt-explorer/config
+    environment:
+      - TZ=America/Denver
+      - HTTP_PORT=4000
+      - CONFIG_PATH=/mqtt-explorer/config
+      # - HTTP_USER=
+      # - HTTP_PASSWORD=
+      # - SSL_KEY_PATH=
+      # - SSH_CERT_PATH=
+    user: "${PUID}:${PGID}"
+    depends_on:
+      - mosquitto
+    logging:
+      driver: json-file
+      options:
+        max-size: "25m"
+        max-file: "10"
+    healthcheck:
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:4000" ]
+      interval: 60s
+      timeout: 10s
+      retries: 3
