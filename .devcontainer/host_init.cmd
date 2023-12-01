@@ -1,5 +1,6 @@
 REM Create .devcontainer\\.env if it doesn't exist
 if not exist .devcontainer\\.env copy NUL .devcontainer\\.env
+if not exist .env copy NUL .env
 
 REM Bring USB devices into wsl on Windows - add USB vendor:product IDs here and in container_init.sh
 REM The first time these run it will need admin privileges to bind 

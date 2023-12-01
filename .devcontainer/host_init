@@ -3,6 +3,9 @@
 if [[ ! -f .devcontainer/.env ]]; then
     touch .devcontainer/.env
 fi
+if [[ ! -f .env ]]; then
+    touch .env
+fi
 
 if [[ ! -e /etc/udev/rules.d/60-openocd.rules ]]; then sudo wget -O /etc/udev/rules.d/60-openocd.rules https://raw.githubusercontent.com/raspberrypi/openocd/rp2040/contrib/60-openocd.rules; sudo /lib/systemd/systemd-udevd --daemon; sudo udevadm control --reload-rules; fi
 

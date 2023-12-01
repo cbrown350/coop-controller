@@ -75,11 +75,11 @@
     "liveServer.settings.proxy": {
         "enable": true, //set it true to enable the feature.
         "baseUri": "/api", //from where you want to proxy. 
-        "proxyUri": "http://REMOTE_DEVICE_IP/api" //the actual url, automatically set on devcontainer from .env; on windows "echo 192.168.2.80 REMOTE_DEVICE_IP >> %WINDIR%\System32\Drivers\Etc\Hosts"
+        "proxyUri": "http://DEV_OTA_REMOTE_DEVICE_IP/api" //the actual url, automatically set on devcontainer from .env; on windows "echo 192.168.2.80 DEV_OTA_REMOTE_DEVICE_IP >> %WINDIR%\System32\Drivers\Etc\Hosts"
     },
 
     "remote.localPortHost": "allInterfaces",
 
     "cmake.cmakePath": "/home/vscode/.platformio/packages/tool-cmake/bin/cmake",
-    "sonarlint.pathToCompileCommands": "${workspaceFolder}\\.pio\\build\\esp32-debug\\compile_commands.json"
+    "sonarlint.pathToCompileCommands": "${workspaceFolder}/.pio/build/esp32-debug/compile_commands.json"
 }

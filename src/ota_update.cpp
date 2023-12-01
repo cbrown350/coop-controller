@@ -10,6 +10,8 @@
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
 
+#include "SPIFFS.h"
+
 #include "esp_crt_bundle.h"
 #include "esp_http_client.h"
 #include "esp_https_ota.h"
@@ -74,11 +76,11 @@ namespace ota_update {
             esp_err_t ret = updateFromUrl(url);
             if (ret == ESP_OK) {
                 CoopLogger::logi(TAG, "Successfully upgraded firmware to version: %s", version);
-                std::this_thread::sleep_for(std::chrono::seconds(5));
-                esp_restart();
             } else {
                 CoopLogger::loge(TAG, "Firmware upgrade failed, error: %s", esp_err_to_name(ret));
-        }
+            }
+            std::this_thread::sleep_for(std::chrono::seconds(5));
+            esp_restart();
         } else {
             CoopLogger::logd(TAG, "Current version: '%s' is not older than server version: '%s', skipping", VERSION_BUILD, version);
             return;
@@ -105,22 +107,24 @@ namespace ota_update {
         // set up direct OTA
         ArduinoOTA.setHostname(HOSTNAME);
         ArduinoOTA.setPassword(DEV_OTA_UPDATE_PASSWORD);
+        static std::string type;
         ArduinoOTA
             .onStart([]() {
-                String type;
-                if (ArduinoOTA.getCommand() == U_FLASH)
-                    type = "sketch";
-                else // U_SPIFFS
+                if (ArduinoOTA.getCommand() == U_FLASH) {
+                    type = "firmware";
+                } else {// U_SPIFFS
                     type = "filesystem";
-                
-                // NOTE: if updating SPIFFS this would be the place to unmount SPIFFS using SPIFFS.end()
-                CoopLogger::logi(TAG, "Start updating %s", type);
+                    SPIFFS.end();
+                }                
+                CoopLogger::logi(TAG, "Start updating %s", type.c_str());
                 })
             .onEnd([]() {
-                CoopLogger::logi(TAG, "\nEnd");
+                CoopLogger::logi(TAG, "%s OTA update finished", type.c_str());
+                if(type.compare("filesystem") == 0) 
+                    SPIFFS.begin();
                 })
             .onProgress([](unsigned int progress, unsigned int total) {
-                CoopLogger::getDefaultPrintStream()->printf("Progress: %u%%\r", (progress / (total / 100)));
+                CoopLogger::getDefaultPrintStream()->printf("%s update progress: %u%%           \r", type.c_str(), (progress / (total / 100)));
                 })
             .onError([](ota_error_t error) {
                 CoopLogger::loge(TAG, "Error[%u]: ", error);

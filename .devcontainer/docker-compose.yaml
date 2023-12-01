@@ -13,13 +13,16 @@ services:
       args:
         USERNAME: vscode
     privileged: true
+    env_file:
+      - .env
+      - ../.env
     extra_hosts:
-      # Windows proxy 'Automatically Detect Settings' must be turned off for Live Server proxy to resolve REMOTE_DEVICE_IP properly
-      - "REMOTE_DEVICE_IP:${REMOTE_DEVICE_IP:-127.0.0.1}" # needed for liveServer Go Live extension to work, used in settings.json
+      # Windows proxy 'Automatically Detect Settings' must be turned off for Live Server proxy to resolve DEV_OTA_REMOTE_DEVICE_IP properly
+      - "DEV_OTA_REMOTE_DEVICE_IP:${DEV_OTA_REMOTE_DEVICE_IP:-127.0.0.1}" # needed for liveServer Go Live extension to work, used in settings.json
     environment:
       - TZ=America/Denver
       - GH_TOKEN=${GH_TOKEN}
-      - REMOTE_DEVICE_IP=${REMOTE_DEVICE_IP:-esp32.local} # used for OTA updates
+      - DEV_OTA_REMOTE_DEVICE_IP=${DEV_OTA_REMOTE_DEVICE_IP:-esp32.local} # used for OTA updates
       - DEV_OTA_HOST_PORT=${DEV_OTA_HOST_PORT:-3500}
     volumes:
       - /etc/localtime:/etc/localtime:ro

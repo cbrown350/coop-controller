@@ -58,7 +58,7 @@ Future ADC Functions (not enough channels now)
 
 ## Quick Start
 
-1. If using devcontainers in VS Code, create a `.env` file under the `.devcontainers` folder and put your GitHub token in under `GH_TOKEN` and the `REMOTE_DEVICE_IP` as the IP address on your network of the ESP32 device you're working with
+1. If using devcontainers in VS Code, create a `.env` file under the `.devcontainers` folder and put your GitHub token in under `GH_TOKEN` and the `DEV_OTA_REMOTE_DEVICE_IP` as the IP address on your network of the ESP32 device you're working with (for direct OTA updates, you need to set `DEV_OTA_REMOTE_DEVICE_IP` in the `.env` file in the project root or set the upload port in the ini file)
 2. Create a `.env` file in the project root to hold private values (see `include/coop_settings.h` for a list or example.env)
 3. Install recommended VS Code extensions you may need (platformio, etc.)
 4. On Windows if not using devcontainers and using the esp-proj JTAG tool, install Zadig ([Zadig - USB driver installation made easy (akeo.ie)](https://zadig.akeo.ie/)); you may need other USB drivers; adjust any ports for debug or monitoring in the platformio.ini file
@@ -71,3 +71,4 @@ Future ADC Functions (not enough channels now)
         2. sudo update-alternatives --install /usr/local/bin/usbip usbip /usr/lib/linux-tools/5.4.0-77-generic/usbip 20
     5. Setup any USB Vendor/Product IDs for devices you're using in the container in `.devcontainer/container_init.sh` and `.devcontainer/host_init.cmd` (esp-prog and the ESP32 IDs are already set there)
 6. See the schematic and other information under the `docs` folder
+7. To create an OTA update package (json manifest and firmware binaries), build the project and build the file system and it will appear in `.pio/build/ota`
