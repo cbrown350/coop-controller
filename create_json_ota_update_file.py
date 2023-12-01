@@ -41,7 +41,6 @@ def create_json_update_file(source, target, env):
     bin_src_filename = os.path.join(bins_path, "firmware.bin")
     if not os.path.exists(bin_src_filename):
         print("File {} not found".format(bin_src_filename))
-        exit(1)
 
     # build json for manifest
     data = {}
