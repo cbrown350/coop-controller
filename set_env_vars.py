@@ -30,15 +30,28 @@ def set_dotenv_ota_values_in_ini(source, target, env):
   try:
     f = open(".env", "r")
     lines = f.readlines()
-    envs = [] 
+    upload_flags = []
     for line in lines:
       if line.strip().startswith("#") or line.strip().startswith(";") or line.strip() == "" or "=" not in line:
         continue
+      if line.split("#")[0].split(";")[0].strip().split("=")[0] == "DEV_OTA_REMOTE_DEVICE_IP":
+        # upload_port=DEV_OTA_REMOTE_DEVICE_IP
+        upload_port = line.split("#")[0].split(";")[0].strip().split("=")[1].replace("\"", "")
+        env.Append(UPLOAD_PORT=upload_port)
+        print("Added upload port: {}".format(upload_port))
+        continue
+      if line.split("#")[0].split(";")[0].strip().split("=")[0] == "DEV_OTA_HOST_PORT":
+        # --host_port=DEV_OTA_HOST_PORT
+        upload_flags.append("--host_port="+line.split("#")[0].split(";")[0].strip().split("=")[1].replace("\"", ""))
+        continue
       if line.split("#")[0].split(";")[0].strip().split("=")[0] == "DEV_OTA_UPDATE_PASSWORD":
         # --auth=DEV_OTA_UPDATE_PASSWORD
-        envs.append("--auth="+line.split("#")[0].split(";")[0].strip().split("=")[1])
-      break
-    env.Append(UPLOAD_FLAGS=envs)
+        upload_flags.append("--auth="+line.split("#")[0].split(";")[0].strip().split("=")[1].replace("\"", ""))
+        continue
+      
+    if upload_flags:
+      env.Append(UPLOAD_FLAGS=upload_flags)
+      print("Added upload flags: {}".format(upload_flags))
   except IOError:
     print("File .env not accessible, create one at the root of the project with variables set. See README and platformio.ini.")
     exit(0)
@@ -46,6 +59,7 @@ def set_dotenv_ota_values_in_ini(source, target, env):
     f.close()
   
 # https://docs.platformio.org/en/latest/scripting/actions.html#scripting-actions  
-env.AddPreAction("upload", set_dotenv_ota_values_in_ini)  
-env.AddPreAction("uploadfsota", set_dotenv_ota_values_in_ini)  
+# env.AddPreAction("upload", set_dotenv_ota_values_in_ini)  
+# env.AddPreAction("uploadfsota", set_dotenv_ota_values_in_ini)  
+set_dotenv_ota_values_in_ini(None, None, env)
   

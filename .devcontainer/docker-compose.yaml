@@ -20,7 +20,7 @@ services:
       - TZ=America/Denver
       - GH_TOKEN=${GH_TOKEN}
       - REMOTE_DEVICE_IP=${REMOTE_DEVICE_IP:-esp32.local} # used for OTA updates
-      - OTA_PORT=${OTA_PORT:-3500}
+      - DEV_OTA_HOST_PORT=${DEV_OTA_HOST_PORT:-3500}
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - coop_controller_workspace-pio-build:/workspace/.pio:consistency

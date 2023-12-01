@@ -4,9 +4,9 @@ Based on the ESP32 controller (ESP32-DevkitC)
 
 ## Features
 
-* [ ] OTA Updater
-    * [ ] Via PlatformIO directly
-    * [ ] Via HTTPS file server
+* [x] OTA Updater
+    * [x] Via PlatformIO directly
+    * [x] Via HTTPS file server
 * [x] WiFi Config
 * [ ] Zero Crossing Function (Pin ISR)
 * [ ] Floodlight Dimmer (for run and nesting box)
@@ -69,4 +69,5 @@ Future ADC Functions (not enough channels now)
     4. If using Ubuntu (you'll have to find comparable usbip install for other distros):
         1. sudo apt install linux-tools-5.4.0-77-generic hwdata
         2. sudo update-alternatives --install /usr/local/bin/usbip usbip /usr/lib/linux-tools/5.4.0-77-generic/usbip 20
+    5. Setup any USB Vendor/Product IDs for devices you're using in the container in `.devcontainer/container_init.sh` and `.devcontainer/host_init.cmd` (esp-prog and the ESP32 IDs are already set there)
 6. See the schematic and other information under the `docs` folder

@@ -22,7 +22,7 @@ wsl -u root if [[ ! -e /etc/udev/rules.d/99-platformio-udev.rules ]]; then wget 
 
 REM Set up Windows Firewall
 setlocal
-SET OTA_PORT=3500
+SET DEV_OTA_HOST_PORT=3500
 FOR /F "tokens=*" %%i in ('type .devcontainer\\.env') do @SET %%i
-netsh advfirewall firewall show rule name="udp-%OTA_PORT%-esp-ota" || powershell "start .devcontainer\\win_firewall_setup.cmd -v runAs"
+netsh advfirewall firewall show rule name="udp-%DEV_OTA_HOST_PORT%-esp-ota" || powershell "start .devcontainer\\win_firewall_setup.cmd -v runAs"
 endlocal

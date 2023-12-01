@@ -10,44 +10,13 @@
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
 
-#include <Update.h>
-
-// #include <mbedtls/config.h>
-// #define MBEDTLS_KEY_EXCHANGE_PSK_ENABLED
-
-// #include "esp_wifi.h"
-// #include "esp_event.h"
-// #include "esp_log.h"
-// #include "esp_system.h"
-// #include "nvs_flash.h"
-// #include "esp_netif.h"
-
-// #include "lwip/err.h"
-// #include "lwip/sockets.h"
-// #include "lwip/sys.h"
-// #include "lwip/netdb.h"
-// #include "lwip/dns.h"
-// #include "esp_tls.h"
 #include "esp_crt_bundle.h"
-
-
-// #include "esp_crt_bundle.h"
-// #include "esp_ota_ops.h"
 #include "esp_http_client.h"
 #include "esp_https_ota.h"
-
-#include "SPIFFS.h"
 
 #ifdef CONFIG_MBEDTLS_CERTIFICATE_BUNDLE
 extern const uint8_t x509_crt_imported_bundle_bin_start[] asm("_binary_x509_crt_bundle_start");
 extern const uint8_t x509_crt_imported_bundle_bin_end[]   asm("_binary_x509_crt_bundle_end");
-// #else
-// // extern const uint8_t rootca_crt_bundle_start[] asm("_binary_x509_crt_bundle_bin_start");
-// // extern const uint8_t rootca_crt_bundle_start[] asm("_binary_x509_crt_bundle_start");
-// // extern const uint8_t rootca_crt_bundle_pem_start[] asm("_binary_ca_cert_pem_start");
-// // extern const uint8_t rootca_crt_bundle_start[] asm("_binary_ca_cert_pem_start");
-// extern const uint8_t rootca_crt_bundle_start[] asm("_binary_ca_certs_bin_start");
-// extern const uint8_t rootca_crt_bundle_end[] asm("_binary_ca_certs_bin_end");
 #endif // CONFIG_MBEDTLS_CERTIFICATE_BUNDLE
 
 namespace ota_update {
@@ -55,36 +24,11 @@ namespace ota_update {
     const char * const TAG = "ota_update";
 
 #ifdef SERVER_OTA_UPDATE_URL
-    // const char* getRootCACertificate() {        
-    //     // static std::string rootCACertificate{""};
-
-    //     // if (rootCACertificate.length() == 0) {
-    //     //     File file = SPIFFS.open(CA_CERT_PEM_FILE, "r");
-
-    //     //     if (!file) {
-    //     //         CoopLogger::loge(TAG, "Failed to open CA certificate for reading");
-    //     //     } else {
-    //     //         file.readBytes(rootCACertificate, file.size());
-    //     //     }
-
-    //     //     file.close();
-    //     // }
-        
-    //     // return rootCACertificate.c_str();
-    //     return (char *)rootca_crt_bundle_start;
-    // }
-
-    esp_err_t updateFromUrl(const char* url) {     
-// #ifndef CONFIG_MBEDTLS_CERTIFICATE_BUNDLE             
-        // esp_crt_bundle_set(rootca_crt_bundle_start, rootca_crt_bundle_end - rootca_crt_bundle_start);    
-// #endif // CONFIG_MBEDTLS_CERTIFICATE_BUNDLE
+    esp_err_t updateFromUrl(const char* url) { 
 #ifdef CONFIG_MBEDTLS_CERTIFICATE_BUNDLE   
         esp_http_client_config_t config = {
             .url = url,
-            // .cert_pem = (char *)rootca_crt_bundle_pem_start //getRootCACertificate(),
-            // .transport_type = HTTP_TRANSPORT_OVER_SSL,
             .crt_bundle_attach = esp_crt_bundle_attach 
-            // .crt_bundle_attach = arduino_esp_crt_bundle_attach
         };
         CoopLogger::logi(TAG, "Starting OTA firmware update from URL: %s", url);
         return esp_https_ota(&config);
@@ -95,22 +39,10 @@ namespace ota_update {
 
 
     void checkUrlForUpdate() {
-        // mbedtls_ssl_config conf;
-        // mbedtls_ssl_config_init(&conf);
-        // esp_crt_bundle_attach(&conf);
-        
-
         WiFiClientSecure client;
-        // class WiFiClientSecureRootBundle : public WiFiClientSecure {
-        //     public:
-        //         WiFiClientSecureRootBundle() : WiFiClientSecure() { _use_ca_bundle = true; };
-        // } client;
 #ifdef CONFIG_MBEDTLS_CERTIFICATE_BUNDLE           
         client.setCACertBundle(x509_crt_imported_bundle_bin_start);
-// #else
-//         client.setCACertBundle(rootca_crt_bundle_start);
 #endif // CONFIG_MBEDTLS_CERTIFICATE_BUNDLE        
-        // client.setCACert((char*)rootca_crt_bundle_pem_start);
         HTTPClient http;
         http.setFollowRedirects(HTTPC_FORCE_FOLLOW_REDIRECTS);
         CoopLogger::logd(TAG, "SERVER_OTA_UPDATE_URL: %s", SERVER_OTA_UPDATE_URL);
@@ -212,6 +144,7 @@ namespace ota_update {
 #ifdef SERVER_OTA_UPDATE_URL
         // std::thread serverOta(serverOtaHandle);
         // serverOta.detach();
+        // using low-level calls for more stack instead of std::thread
         xTaskCreate(serverOtaHandle,          /* Task function. */
                 "serverOtaHandle",        /* String with name of task. */
                 10000,            /* Stack size in bytes. */
