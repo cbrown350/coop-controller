@@ -65,7 +65,8 @@
         "csignal": "cpp",
         "future": "cpp",
         "mutex": "cpp",
-        "esp_crt_bundle.h": "c"
+        "esp_crt_bundle.h": "c",
+        "*.ipp": "cpp"
     },
     // "terminal.integrated.sendKeybindingsToShell": true,
 

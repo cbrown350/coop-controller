@@ -9,6 +9,7 @@
 #include "Dimmer.h"
 #include "DoorController.h"
 #include "ElogCoopLogger.h"
+#include "SyslogCoopLogger.h"
 #include "factory_reset.h"
 #include "HeaterController.h"
 #include "LEDController.h"
@@ -42,6 +43,7 @@ extern "C" void app_main() {
   esp_log_level_set("*", ESP_LOG_ERROR);
   esp_log_level_set("wifi", ESP_LOG_WARN);
   CoopLogger::addLogger(std::make_unique<ElogCoopLogger>(Serial));
+  CoopLogger::addLogger(std::make_unique<SyslogCoopLogger>());
   CoopLogger::setDefaultPrintStream(&Serial);
   CoopLogger::logi("Main", "Starting %s version %s",  PRODUCT_NAME, VERSION_BUILD);
 
