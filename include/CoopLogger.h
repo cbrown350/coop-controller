@@ -19,11 +19,11 @@ class CoopLogger {
 
         CoopLogger() = default;
 
-        virtual void v_logv(const char *msg) = 0;
-        virtual void v_logd(const char *msg) = 0;
-        virtual void v_logi(const char *msg) = 0; 
-        virtual void v_logw(const char *msg) = 0;
-        virtual void v_loge(const char *msg) = 0;
+        virtual void v_logv(const char *msg) { /* do nothing if not enabled */ };
+        virtual void v_logd(const char *msg) { /* do nothing if not enabled */ };
+        virtual void v_logi(const char *msg) { /* do nothing if not enabled */ }; 
+        virtual void v_logw(const char *msg) { /* do nothing if not enabled */ };
+        virtual void v_loge(const char *msg) { /* do nothing if not enabled */ };
 
     public:
         virtual ~CoopLogger() = default;

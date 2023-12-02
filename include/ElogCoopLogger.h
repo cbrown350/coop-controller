@@ -9,16 +9,15 @@
 
 class ElogCoopLogger : public CoopLogger { 
     public:
+        ~ElogCoopLogger() override = default;
         explicit ElogCoopLogger(HardwareSerial &printStream=Serial) 
-                : CoopLogger(), printStream(printStream), elog(), coopLoggerPrinter(elog) {
 #ifdef ENABLE_LOGGING    
+                : CoopLogger(), printStream(printStream), elog(), coopLoggerPrinter(elog) {
             printStream.begin(SERIAL_BAUD_RATE);
             elog.addSerialLogging(printStream, "CoLo", DEBUG);
             setDefaultPrintStream(&coopLoggerPrinter);
-            elog.log(INFO, "Using Elog_CoopLogger");
-#endif
+            elog.log(INFO, "Using ElogCoopLogger");
         };
-        ~ElogCoopLogger() override = default;
 
     private:
         class ElogCoopLoggerPrinter : public Print {
@@ -88,6 +87,9 @@ class ElogCoopLogger : public CoopLogger {
         void v_loge(const char *msg) override {
             elog.log(ERROR, msg);
         };
+#else   
+                : CoopLogger() { };
+#endif // ENABLE_LOGGING
 };
 
 

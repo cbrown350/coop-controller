@@ -61,6 +61,15 @@
 #ifndef DEFAULT_MQTT_PASSWORD
 #define DEFAULT_MQTT_PASSWORD                   "password"
 #endif
+
+// #define SYSLOG_SERVER                           "syslog-server"
+
+#ifndef SYSLOG_PORT
+#define SYSLOG_PORT                             514
+#endif
+
+// #define ENABLE_LOGGING
+
 // end .env settings
 
 
@@ -72,7 +81,9 @@
 #define PRODUCT_VERSION                         PRODUCT_NAME " " VERSION_BUILD
 
 #ifdef IS_DEBUG_BUILD
+#ifndef ENABLE_LOGGING
 #define ENABLE_LOGGING
+#endif
 #endif
 
 #include <Arduino.h>
