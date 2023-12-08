@@ -6,7 +6,7 @@
 namespace factory_reset {
     
     void init();
-    void addOnFactoryResetCallback(const std::function<void()> onFactoryResetCallback);
+    void addOnFactoryResetCallback(const std::function<void()> &onFactoryResetCallback);
 }
 
 
