@@ -28,6 +28,7 @@ namespace factory_reset {
     while(true) {
       std::this_thread::sleep_for(std::chrono::milliseconds(1000));
       if(factory_reset) {
+        CoopLogger::logi(TAG, "Starting factory reset process, will continue if button held for %d seconds...", FACTORY_RESET_TIME_SECS);
         std::this_thread::sleep_for(std::chrono::milliseconds(FACTORY_RESET_TIME_SECS * 1000));
         if(factory_reset) {
           CoopLogger::logi(TAG, "Factory reset triggered...");
@@ -49,7 +50,7 @@ namespace factory_reset {
     interrupts();
 
     thread t(factoryResetLoop);
-    t.detach(); //NOSONAR - won't fix, intended to run once and end
+    t.detach(); //NOSONAR - won't fix, intended to run indefinitely
   }
 
   void addOnFactoryResetCallback(const function<void()> onFactoryResetCallback) {
