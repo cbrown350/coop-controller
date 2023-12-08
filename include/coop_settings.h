@@ -3,16 +3,18 @@
 
 #define STRINGIFY(x) #x
 #define TOSTRING(x) STRINGIFY(x)
+#define STRLEN(s) (sizeof(s)/sizeof(s[0]))
 
 
 #define SERIAL_BAUD_RATE                        115200 // 921600 //
+#define MAX_HOSTNAME_LENGTH                     20 
 
 // Vars below can be set via a .env file at the project root
 #ifndef PRODUCT_NAME
 #define PRODUCT_NAME                             "Coop Controller"
 #endif
 
-#ifndef HOSTNAME
+#ifndef HOSTNAME                                // must be less than MAX_HOSTNAME_LENGTH, 23 is the max for MQTT clientID, derived from HOSTNAME-controllerID
 #define HOSTNAME                                "CoopController" 
 #endif
 
@@ -23,6 +25,10 @@
 #ifndef COOP_CONTROLLER_AP_PASSWORD
 #define COOP_CONTROLLER_AP_PASSWORD             NULL
 #pragma warning("COOP_CONTROLLER_AP_PASSWORD not defined, the wifi setup AP will not be password protected.")
+#endif
+
+#ifndef MAX_WIFI_EXTRA_PARAM_MAX_LENGTH
+#define MAX_WIFI_EXTRA_PARAM_MAX_LENGTH         40
 #endif
 
 #ifndef FACTORY_RESET_TIME_SECS                 // time to press the reset button for a factory reset
@@ -46,9 +52,7 @@
 #pragma warning("DEV_OTA_UPDATE_PASSWORD not defined, OTA updates can be performed without any password protection")
 #endif
 
-#ifndef DEFAULT_MQTT_SERVER
-#define DEFAULT_MQTT_SERVER                     "mosquitto"
-#endif
+// DEFAULT_MQTT_SERVER                          Set if using MQTT
 
 #ifndef DEFAULT_MQTT_PORT
 #define DEFAULT_MQTT_PORT                       "1883"
@@ -62,13 +66,17 @@
 #define DEFAULT_MQTT_PASSWORD                   "password"
 #endif
 
-// #define SYSLOG_SERVER                           "syslog-server"
+#ifndef MQTT_MAX_PACKET                         // this will limit things such as password length
+#define MQTT_MAX_PACKET                         256 
+#endif
+
+// SYSLOG_SERVER                                Set if using Syslog
 
 #ifndef SYSLOG_PORT
 #define SYSLOG_PORT                             514
 #endif
 
-// #define ENABLE_LOGGING
+// ENABLE_LOGGING                               Set if using logging
 
 // end .env settings
 
@@ -84,6 +92,10 @@
 #ifndef ENABLE_LOGGING
 #define ENABLE_LOGGING
 #endif
+#endif
+
+#ifndef LOG_TAG_MAX_LEN
+#define LOG_TAG_MAX_LEN 5
 #endif
 
 #include <Arduino.h>

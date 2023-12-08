@@ -7,43 +7,78 @@ Based on the ESP32 controller (ESP32-DevkitC)
 * [x] OTA Updater
     * [x] Via PlatformIO directly
     * [x] Via HTTPS file server
+    * [ ] Via web page
 * [x] WiFi Config
-* [ ] Zero Crossing Function (Pin ISR)
-* [ ] Floodlight Dimmer (for run and nesting box)
-    * [ ] Leading Edge Phase Dimming
+    * [ ] Reconfig via web page
+* [ ] Set time from NTP server
+    * [ ] Get timezone and DST from WiFi setup
+    * [ ] Get timezone and DST from web page
+    * [ ] Infer timezone from?
 * [ ] Sunrise/Sunset Trigger
     * [ ] Time Zones
     * [ ] Daylight Savings
+* [ ] Zero Crossing Function for Dimming (Pin ISR)
+* [ ] Floodlight Dimmers (for run and nesting box)
+    * [ ] Leading Edge Phase Dimming
+    * [ ] Get settings from WiFi setup
+    * [ ] Get settings from web page
+    * [ ] Get settings from Home Assistant MQTT
 * [ ] OLED Display Controller
+    * [ ] Templates different display data
+    * [ ] Get settings from web page
 * [ ] Roost Door Controller
     * [ ] Door Open Sense
     * [ ] Door Close Sense
     * [ ] Motor Close Power Sense (ADC)
     * [ ] Motor Direction (2 Lines)
     * [ ] Trigger When Open/Close Sensed (Pins ISR)
+    * [ ] MQTT status and control and settings?
+    * [ ] Web page status and settings
 * [ ] Watchdog/Heartbeat Indicator
-* [ ] Temperature ADC Base
+    * [ ] MQTT status
+    * [ ] Web page status
+* [ ] Temperature ADC Base Object
+    * [ ] MQTT status
+    * [ ] Web page status
 * [ ] Roost Temperature (ADC)
 * [ ] Outside Temperature (ADC)
 * [ ] Water Temperature (ADC)
 * [ ] Water Heater Controller
     * [ ] Pulse Skip Modulation Power Control? Only need On/Off
+    * [ ] MQTT status and control
+    * [ ] Web page status
 * [ ] MQTT
-    * [ ] config via WiFi setup page
+    * [x] config via WiFi setup page
+    * [ ] Config via web page
+    * [ ] Report data to Home Assistant
+    * [ ] Home Assistant auto-discovery
 * [ ] Web Page Dashboard
     * [ ] Status
     * [ ] Basic Controls
-    * [ ] Settings Changes (WiFi, MQTT, etc.)
+    * [ ] Settings Changes (WiFi, MQTT, Syslog, etc.)
 * [ ] Box Open Light Sensor (ADC)
+    * [ ] MQTT status
+    * [ ] Web page status
 * [ ] Low Water Level Sensor
+    * [ ] MQTT status
+    * [ ] Web page status
 * [ ] Food Level Sensor (ADC)
+    * [ ] MQTT status
+    * [ ] Web page status
 * [ ] Single LED Controller
-    * [ ] Red LED
-    * [ ] Green LED (DAC)
+    * [ ] Red LED, watchdog?
+    * [ ] Green LED (DAC)?
 * [x] Factory Reset Function (Boot Switch Duration 10s)
 * [ ] WiFi Reset Function (Boot Switch Duration 30s, Red LED Slow Flash)
 * [ ] Buzzer Controller (DAC)
 * [ ] Water Flow Meter
+    * [ ] MQTT status
+    * [ ] Web page status
+* [x] Syslog support
+    * [ ] Buffer messages when not connected
+    * [ ] Add server settings to WiFi config setup
+    * [ ] MQTT status
+    * [ ] Web page status and settings
 
 Future Functions
 

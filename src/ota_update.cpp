@@ -9,12 +9,14 @@
 #include <WiFiClientSecure.h>
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
+#include "utils.h"
 
 #include "SPIFFS.h"
 
 #include "esp_crt_bundle.h"
 #include "esp_http_client.h"
 #include "esp_https_ota.h"
+#include <condition_variable>
 
 #ifdef CONFIG_MBEDTLS_CERTIFICATE_BUNDLE
 extern const uint8_t x509_crt_imported_bundle_bin_start[] asm("_binary_x509_crt_bundle_start");
@@ -25,20 +27,36 @@ namespace ota_update {
 
     const char * const TAG = "ota_update";
 
+    std::condition_variable devOTALoopCond;
+    std::mutex devOTALoopMutex;
+    std::thread *devOTALoopThread = nullptr;
+    bool devOTALoopThreadStop = false;
+
+
+    std::condition_variable serverOTALoopCond;
+    std::mutex serverOTALoopMutex;
+    // std::thread *serverOTALoopThread = nullptr;
+    TaskHandle_t *serverOTALoopThread = nullptr;
+    bool serverOTALoopThreadStop = false;
+
+    
 #ifdef SERVER_OTA_UPDATE_URL
     esp_err_t updateFromUrl(const char* url) { 
 #ifdef CONFIG_MBEDTLS_CERTIFICATE_BUNDLE   
-        esp_http_client_config_t config = {
+/* esp_http_client_config_t doesn't work if fully initialized, done per ESP-IDF docs */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
+        esp_http_client_config_t config = { 
             .url = url,
-            .crt_bundle_attach = esp_crt_bundle_attach 
+            .crt_bundle_attach = esp_crt_bundle_attach,
         };
-        CoopLogger::logi(TAG, "Starting OTA firmware update from URL: %s", url);
+#pragma GCC diagnostic pop
+        CoopLogger::logi(TAG, "Starting OTA firmware update from URL: %s...", url);
         return esp_https_ota(&config);
 #else
         return ESP_FAIL;
 #endif // CONFIG_MBEDTLS_CERTIFICATE_BUNDLE
     }
-
 
     void checkUrlForUpdate() {
         WiFiClientSecure client;
@@ -49,18 +67,22 @@ namespace ota_update {
         http.setFollowRedirects(HTTPC_FORCE_FOLLOW_REDIRECTS);
         CoopLogger::logd(TAG, "SERVER_OTA_UPDATE_URL: %s", SERVER_OTA_UPDATE_URL);
         http.begin(client, SERVER_OTA_UPDATE_URL);
+        http.addHeader("User-Agent", PRODUCT_NAME "/" VERSION_BUILD);
+        http.addHeader("Accept", "application/json");
         int errorCode = http.GET();
         if (errorCode != HTTP_CODE_OK) {
             CoopLogger::loge(TAG, "HTTP GET failed, error: %s (%d)", http.errorToString(errorCode).c_str(), errorCode);
             return;
         }
-        String jsonFile = http.getString();
-        CoopLogger::logd(TAG, "jsonFile: %s", jsonFile.c_str());
-        http.end();
+        // String jsonFile = http.getString();
+        // CoopLogger::logd(TAG, "jsonFile: %s", jsonFile.c_str());
+        // http.end();
 
         // parson json file
         DynamicJsonDocument doc(1024);
-        DeserializationError error = deserializeJson(doc, jsonFile);
+        // DeserializationError error = deserializeJson(doc, jsonFile);
+        DeserializationError error = deserializeJson(doc, http.getStream());
+        http.end();
         if (error) {
             CoopLogger::loge(TAG, "deserializeJson() failed: %s", error.c_str());
             return;
@@ -89,21 +111,21 @@ namespace ota_update {
     }  
 
     void serverOtaHandle(void * pvParameters) {
-        while(true) {
-            while (WiFi.status() != WL_CONNECTED) {
-                std::this_thread::sleep_for(std::chrono::seconds(10));
-            }
+        if (WiFi.status() == WL_CONNECTED) 
             checkUrlForUpdate();
-            std::this_thread::sleep_for(std::chrono::milliseconds(SERVER_OTA_CHECK_INTERVAL_SECS * 1000));
+        while(utils::wait_for(std::chrono::seconds(SERVER_OTA_CHECK_INTERVAL_SECS), 
+                    serverOTALoopMutex, serverOTALoopCond, serverOTALoopThreadStop)) {
+            if (WiFi.status() == WL_CONNECTED) 
+                checkUrlForUpdate();
         }
+        vTaskDelete( NULL );
     }
 #endif // SERVER_OTA_UPDATE_URL  
 
-    void devOtaHandle() {
-        
-        while (WiFi.status() != WL_CONNECTED) {
-            std::this_thread::sleep_for(std::chrono::seconds(5));
-        }
+    void devOtaHandle() {        
+        // while (WiFi.status() != WL_CONNECTED) {
+        //     std::this_thread::sleep_for(std::chrono::seconds(5));
+        // }
         // set up direct OTA
         ArduinoOTA.setHostname(HOSTNAME);
         ArduinoOTA.setPassword(DEV_OTA_UPDATE_PASSWORD);
@@ -135,27 +157,54 @@ namespace ota_update {
                 else if (error == OTA_END_ERROR) CoopLogger::loge(TAG, "End Failed");
                 });
         ArduinoOTA.begin();
-        while(true) {
-            ArduinoOTA.handle();
-            std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+        while(utils::wait_for(std::chrono::seconds(1), devOTALoopMutex, devOTALoopCond, devOTALoopThreadStop)) {
+            if (WiFi.status() == WL_CONNECTED) 
+                ArduinoOTA.handle();
         }
     }
 
     void init() {
-        std::thread devOta(devOtaHandle);
-        devOta.detach();
+        devOTALoopThreadStop = false;
+        devOTALoopThread = new std::thread(devOtaHandle);
 
 #ifdef SERVER_OTA_UPDATE_URL
-        // std::thread serverOta(serverOtaHandle);
-        // serverOta.detach();
+        serverOTALoopThreadStop = false;
+        // serverOTALoopThread = new std::thread(devOtaHandle);
         // using low-level calls for more stack instead of std::thread
         xTaskCreate(serverOtaHandle,          /* Task function. */
                 "serverOtaHandle",        /* String with name of task. */
                 10000,            /* Stack size in bytes. */
                 NULL,             /* Parameter passed as input of the task */
                 1,                /* Priority of the task. */
-                NULL);
+                serverOTALoopThread);
 #endif // SERVER_OTA_UPDATE_URL                
+    }
+
+    void deinit() {
+        if(devOTALoopThread) {
+            {
+                std::scoped_lock<std::mutex> l(devOTALoopMutex);
+                devOTALoopThreadStop = true;
+            }
+            devOTALoopCond.notify_one();
+            devOTALoopThread->join();
+            delete devOTALoopThread;
+            devOTALoopThread = nullptr;
+        }
+
+        if(serverOTALoopThread) {
+            {
+                std::scoped_lock<std::mutex> l(serverOTALoopMutex);
+                serverOTALoopThreadStop = true;
+            }
+            serverOTALoopCond.notify_one();
+        //     serverOTALoopThread->join();
+        //     delete serverOTALoopThread;
+            while(eTaskGetState(serverOTALoopThread) != eDeleted) {
+                std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            }
+            serverOTALoopThread = nullptr;
+        }
     }
 } // namespace ota_update
 

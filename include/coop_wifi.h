@@ -18,7 +18,13 @@ namespace coop_wifi {
     char * ip;
   };
 
-  void init(Print &printStream,
+  class HasConfigPageParams {
+    public:
+      [[nodiscard]] virtual std::vector<WiFiManagerParameter*> getSettingParams() = 0;
+      virtual void afterConfigPageSave() = 0;
+  };
+
+  void init(Print &_printStream,
       const std::vector<std::function<void()>> &onConnectedCallbacks={}, 
       const std::vector<std::function<void()>> &onIPAddressCallbacks={}, 
       const std::vector<std::function<void()>> &onDisconnectedCallbacks={});
@@ -26,10 +32,15 @@ namespace coop_wifi {
       const std::vector<std::function<void()>> &onConnectedCallbacks={}, 
       const std::vector<std::function<void()>> &onIPAddressCallbacks={}, 
       const std::vector<std::function<void()>> &onDisconnectedCallbacks={});
-  
-  void addSetupParams(const std::vector<WiFiManagerParameter*> &setupParams);
-  void listNetworks(Print &printStream=*CoopLogger::getDefaultPrintStream());
-  void printWifiStatus(Print &printStream=*CoopLogger::getDefaultPrintStream());
+
+  void addOnConnectedCallback(const std::function<void()> &onConnectedCallback);
+  void addOnIPAddressCallback(const std::function<void()> &onIPAddressCallback);
+  void addOnDisconnectedCallback(const std::function<void()> &onDisconnectedCallback);
+
+//  void addSetupParams(const std::vector<WiFiManagerParameter*> &setupParamObjs);
+  void addSetupParams(HasConfigPageParams *hasParams);
+  void listNetworks(Print &_printStream=*CoopLogger::getDefaultPrintStream());
+  void printWifiStatus(Print &_printStream=*CoopLogger::getDefaultPrintStream());
 
   void resetWifi();
 

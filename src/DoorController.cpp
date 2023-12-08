@@ -2,6 +2,6 @@
 
 #include "CoopLogger.h"
 
-DoorController::DoorController() {
-    CoopLogger::logi(TAG, "DoorController<T>::DoorController()");
-}
+//DoorController::DoorController() {
+//    CoopLogger::logi(TAG, "DoorController<T>::DoorController()");
+//}

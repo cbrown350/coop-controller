@@ -2,9 +2,9 @@
 #define OTA_UPDATE_H_
 
 
-namespace ota_update {
-    
-    void init();    
+namespace ota_update {    
+    void init();   
+    void deinit(); 
 } // namespace ota_update
 
 #endif // OTA_UPDATE_H_

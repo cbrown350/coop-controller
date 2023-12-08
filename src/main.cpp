@@ -31,17 +31,13 @@ void test() {
 }
 
 
-
 extern "C" void app_main() {
   static MQTTController mqtt;
   static DoorController door;
-  bool test1 = door.getData().door_open_sensed;
-
+  bool test1 = door.dataToBool("door_open_sensed");
 
   initArduino();
 
-  esp_log_level_set("*", ESP_LOG_ERROR);
-  esp_log_level_set("wifi", ESP_LOG_WARN);
   CoopLogger::addLogger(std::make_unique<ElogCoopLogger>(Serial));
   CoopLogger::addLogger(std::make_unique<SyslogCoopLogger>());
   CoopLogger::setDefaultPrintStream(&Serial);
@@ -50,10 +46,12 @@ extern "C" void app_main() {
   factory_reset::addOnFactoryResetCallback(coop_wifi::resetWifi);
   factory_reset::init();
 
-  coop_wifi::addSetupParams(mqtt.getSettingParams());
+  coop_wifi::addSetupParams(&mqtt);
   coop_wifi::init(*CoopLogger::getDefaultPrintStream(), {test});
 
-  ota_update::init();
+  coop_wifi::addOnIPAddressCallback(ota_update::init);
+  coop_wifi::addOnDisconnectedCallback(ota_update::deinit);
 
-  mqtt.init();
+  coop_wifi::addOnIPAddressCallback([]() { mqtt.init(); });
+  coop_wifi::addOnDisconnectedCallback([]() { mqtt.deinit(); });
 }

@@ -25,23 +25,15 @@ namespace coop_wifi {
   vector<function<void()>> onConnectedCallbacks;
   vector<function<void()>> onIPAddressCallbacks;
   vector<function<void()>> onDisconnectedCallbacks;
-  vector<WiFiManagerParameter*> setupParams;
+  vector<HasConfigPageParams*> setupParamObjs;
 
-  bool reset_wifi = false;
-
-  // void IRAM_ATTR wifiResetIsr() {
-  //   reset_wifi = true;
-  // }
-
-  // void setupWifiReset() {
-  //   CoopLogger::logi(TAG, "Setting up WiFi reset on pin %d", WIFI_SETUP_FACTORY_RESET_BUTTON_IN_B);
-  //   pinMode(WIFI_SETUP_FACTORY_RESET_BUTTON_IN_B, INPUT_PULLUP);
-  //   attachInterrupt(digitalPinToInterrupt(WIFI_SETUP_FACTORY_RESET_BUTTON_IN_B), wifiResetIsr, FALLING);
-  //   interrupts();
-  // }
+  void cleanupSetupParamObjs() {
+      setupParamObjs.erase(std::remove_if(setupParamObjs.begin(), setupParamObjs.end(),
+                                          [](HasConfigPageParams *hasParams) -> bool { return hasParams == nullptr; }),
+                           setupParamObjs.end());
+  }
 
   void resetWifi() {
-    // reset_wifi = true;
     CoopLogger::logi(TAG, "Resetting WiFi settings");
     WiFi.disconnect(false, true);
   }
@@ -52,15 +44,13 @@ namespace coop_wifi {
 
   void WiFi_Connected(WiFiEvent_t event, WiFiEventInfo_t info) {
     CoopLogger::logi(TAG, "Connected to AP successfully!");
-    for (auto onConnectedCallback : onConnectedCallbacks)
+    for (const auto& onConnectedCallback : onConnectedCallbacks)
       onConnectedCallback();
   }
 
   void Get_IPAddress(WiFiEvent_t event, WiFiEventInfo_t info) {
     CoopLogger::logi(TAG, "WIFI is connected!");  
     printWifiStatus(*printStream);
-    // printStream.println("IP address: ");
-    // printStream.println(WiFi.localIP());
 
     // esp_sntp_config_t config = ESP_NETIF_SNTP_DEFAULT_CONFIG("pool.ntp.org");
     // esp_netif_sntp_init(&config);
@@ -79,40 +69,58 @@ namespace coop_wifi {
 
     configTime(-3600 * 6, 0, "pool.ntp.org", "192.168.2.233");
 
-    // server.begin();
-    for (auto onIPAddressCallback : onIPAddressCallbacks)
+    cleanupSetupParamObjs();
+    for (auto setupParamObj : setupParamObjs)
+        setupParamObj->afterConfigPageSave();
+
+    for (const auto &onIPAddressCallback : onIPAddressCallbacks)
       onIPAddressCallback();
   }
 
   void Wifi_disconnected(WiFiEvent_t event, WiFiEventInfo_t info) {
     CoopLogger::logi(TAG, "Disconnected from WIFI access point");
     CoopLogger::logi(TAG, "WiFi lost connection. Reason: %u", info.wifi_sta_disconnected.reason);
-    CoopLogger::logi(TAG, "Reconnecting...");
-    // WiFi.begin(ssid, pass);
-    // server.end();
-    for (auto onDisconnectedCallback : onDisconnectedCallbacks)
+    for (const auto &onDisconnectedCallback : onDisconnectedCallbacks)
       onDisconnectedCallback();
   }
 
-  void addSetupParams(const vector<WiFiManagerParameter*> &setupParams) {
-    for(auto setupParam : setupParams) 
-      coop_wifi::setupParams.push_back(setupParam);
+//  void addSetupParams(const vector<WiFiManagerParameter*> &setupParamObjs) {
+//    for(auto setupParam : setupParamObjs)
+//      coop_wifi::setupParamObjs.push_back(setupParam);
+//  }
+
+  void addSetupParams(HasConfigPageParams *hasParams) {
+//    addSetupParams(hasParams->getSettingParams());
+    coop_wifi::setupParamObjs.push_back(hasParams);
+  }
+
+  void addOnConnectedCallback(const function<void()> &onConnectedCallback) {
+    onConnectedCallbacks.push_back(onConnectedCallback);
+  }
+
+  void addOnIPAddressCallback(const function<void()> &onIPAddressCallback) {
+    onIPAddressCallbacks.push_back(onIPAddressCallback);
+  }
+
+  void addOnDisconnectedCallback(const function<void()> &onDisconnectedCallback) {
+    onDisconnectedCallbacks.push_back(onDisconnectedCallback);
   }
 
   void setAPPageParams(WiFiManager &wm) {
-    for (auto setupParam : setupParams) {
-      wm.addParameter(setupParam);
+      cleanupSetupParamObjs();
+    for (auto setupParamObj : setupParamObjs) {
+        for (auto param : setupParamObj->getSettingParams()) {
+            wm.addParameter(param);
+        }
     }
   }
 
   void autoConnect(void * args) {    
     
     WiFi.mode(WIFI_STA);
-    // wm.resetSettings();
     WiFi.onEvent(WiFi_Connected, ARDUINO_EVENT_WIFI_STA_CONNECTED);
     WiFi.onEvent(Get_IPAddress, ARDUINO_EVENT_WIFI_STA_GOT_IP);
     WiFi.onEvent(Wifi_disconnected, ARDUINO_EVENT_WIFI_STA_DISCONNECTED);
-    // listNetworks(*printStream);
     WiFiManager wm(*printStream);
     wm.setTimeout(WIFI_SETUP_TIMEOUT_SECS);
     // wm.setAPCallback(configModeCallback); // called on AP portal start -> configModeCallback (WiFiManager *myWiFiManager)
@@ -128,29 +136,18 @@ namespace coop_wifi {
     //       onConnectedCallback();
     }
 
-    // while(true) {
-    //   std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-    //   if(reset_wifi) {
-    //     CoopLogger::logi(TAG, "Resetting WiFi settings");
-    //     WiFi.disconnect(false, true);
-    //     // ESP.restart();
-    //     break;
-    //   }
-    // }
-    vTaskDelete( NULL );
+    vTaskDelete( nullptr );
   }
 
-  void init(Print &printStream,
-      const vector<function<void()>> &onConnectedCallbacks, 
-      const vector<function<void()>> &onIPAddressCallbacks, 
-      const vector<function<void()>> &onDisconnectedCallbacks) {
+  void init(Print &_printStream,
+      const vector<function<void()>> &_onConnectedCallbacks,
+      const vector<function<void()>> &_onIPAddressCallbacks,
+      const vector<function<void()>> &_onDisconnectedCallbacks) {
 
-    coop_wifi::printStream = &printStream;
-    coop_wifi::onConnectedCallbacks = onConnectedCallbacks;
-    coop_wifi::onIPAddressCallbacks = onIPAddressCallbacks;
-    coop_wifi::onDisconnectedCallbacks = onDisconnectedCallbacks;
-
-    // setupWifiReset();
+    coop_wifi::printStream = &_printStream;
+    coop_wifi::onConnectedCallbacks = _onConnectedCallbacks;
+    coop_wifi::onIPAddressCallbacks = _onIPAddressCallbacks;
+    coop_wifi::onDisconnectedCallbacks = _onDisconnectedCallbacks;
 
 	  // thread startAutoConnect(autoConnect);
     // startAutoConnect.detach(); //NOSONAR - won't fix, intended to run once and end
@@ -158,40 +155,30 @@ namespace coop_wifi {
     xTaskCreate(autoConnect,          /* Task function. */
                 "autoConnect",        /* String with name of task. */
                 10000,            /* Stack size in bytes. */
-                NULL,             /* Parameter passed as input of the task */
+                nullptr,             /* Parameter passed as input of the task */
                 1,                /* Priority of the task. */
-                NULL);
+                nullptr);
   }
   void init(
-      const vector<function<void()>> &onConnectedCallbacks,
-      const vector<function<void()>> &onIPAddressCallbacks,
-      const vector<function<void()>> &onDisconnectedCallbacks) {
-    init(*CoopLogger::getDefaultPrintStream(), onConnectedCallbacks, onIPAddressCallbacks, onDisconnectedCallbacks);
+      const vector<function<void()>> &_onConnectedCallbacks,
+      const vector<function<void()>> &_onIPAddressCallbacks,
+      const vector<function<void()>> &_onDisconnectedCallbacks) {
+    init(*CoopLogger::getDefaultPrintStream(), _onConnectedCallbacks, _onIPAddressCallbacks, _onDisconnectedCallbacks);
   }
   
-  void listNetworks(Print &printStream) {
+  void listNetworks(Print &_printStream) {
     // scan for nearby networks:
-    printStream.println("** Scan WiFi Networks **");
+    _printStream.println("** Scan WiFi Networks **");
 
     int16_t numSsid = WiFi.scanNetworks();
 
     // print the list of networks seen:
-    printStream.print("Number of available networks:");
-    printStream.println(numSsid);
+    _printStream.print("Number of available networks:");
+    _printStream.println(numSsid);
 
     // print the network number and name for each network found:
     for (int thisNet = 0; thisNet<numSsid; thisNet++) {
       std::string apValues;
-      // printStream.print(thisNet);
-      // printStream.print(") ");
-      // printStream.print(WiFi.SSID(thisNet));
-      // printStream.print("\tSignal: ");
-      // printStream.print(WiFi.RSSI(thisNet));
-      // printStream.print(" dBm");
-      // printStream.print("\tEncryption: ");
-      // printStream.print(WiFi.encryptionType(thisNet));
-      // printStream.print("\tChannel: ");
-      // printStream.println(WiFi.channel(thisNet));
       apValues += std::to_string(thisNet);
       apValues += ") ";
       apValues += WiFi.SSID(thisNet).c_str();
@@ -203,34 +190,19 @@ namespace coop_wifi {
       apValues += "\tChannel: ";
       apValues += std::to_string(WiFi.channel(thisNet));
 
-      printStream.println(apValues.c_str());
+      _printStream.println(apValues.c_str());
     }
   }
   
 
-  void printWifiStatus(Print &printStream) {
-  
-    // printStream.print("SSID: ");
-    // printStream.println(WiFi.SSID());
-
-    // printStream.print("Channel: ");
-    // printStream.println(WiFi.channel());
-
-    // IPAddress ip = WiFi.localIP();
-    // printStream.print("IP Address: ");
-    // printStream.println(ip);
-
-    // long rssi = WiFi.RSSI();
-    // printStream.print("signal strength (RSSI):");
-    // printStream.print(rssi);
-    // printStream.println(" dBm");
+  void printWifiStatus(Print &_printStream) {
     std::string wifiStatus;
     wifiStatus = "SSID: " + std::string(WiFi.SSID().c_str());
     wifiStatus += "\nChannel: " + std::to_string(WiFi.channel());
     wifiStatus += "\nIP Address: " + std::string(WiFi.localIP().toString().c_str());
     wifiStatus += "\nsignal strength (RSSI):" + std::to_string(WiFi.RSSI()) + " dBm";
 
-    printStream.println(wifiStatus.c_str());
+    _printStream.println(wifiStatus.c_str());
   }
 
 }
