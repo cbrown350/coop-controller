@@ -94,16 +94,43 @@ namespace coop_wifi {
     coop_wifi::setupParamObjs.push_back(hasParams);
   }
 
-  void addOnConnectedCallback(const function<void()> &onConnectedCallback) {
+  const function<void()> * addOnConnectedCallback(const function<void()> &onConnectedCallback) {
     onConnectedCallbacks.push_back(onConnectedCallback);
+    return &onConnectedCallbacks.back();
   }
 
-  void addOnIPAddressCallback(const function<void()> &onIPAddressCallback) {
+  void removeOnConnectedCallback(const std::function<void()> *onConnectedCallback) {
+    onConnectedCallbacks.erase(std::remove_if(onConnectedCallbacks.begin(), onConnectedCallbacks.end(),
+                                               [onConnectedCallback](const std::function<void()> &callback) -> bool {
+                                                   return &callback == onConnectedCallback;
+                                               }),
+                                  onConnectedCallbacks.end());
+  }
+
+  const function<void()> * addOnIPAddressCallback(const function<void()> &onIPAddressCallback) {
     onIPAddressCallbacks.push_back(onIPAddressCallback);
+    return &onIPAddressCallbacks.back();
   }
 
-  void addOnDisconnectedCallback(const function<void()> &onDisconnectedCallback) {
+  void removeOnIPAddressCallback(const std::function<void()> *onIPAddressCallback) {
+    onIPAddressCallbacks.erase(std::remove_if(onIPAddressCallbacks.begin(), onIPAddressCallbacks.end(),
+                                               [onIPAddressCallback](const std::function<void()> &callback) -> bool {
+                                                   return &callback == onIPAddressCallback;
+                                               }),
+                                  onIPAddressCallbacks.end());
+  }
+
+  const function<void()> * addOnDisconnectedCallback(const function<void()> &onDisconnectedCallback) {
     onDisconnectedCallbacks.push_back(onDisconnectedCallback);
+    return &onDisconnectedCallbacks.back();
+  }
+
+  void removeOnDisconnectedCallback(const std::function<void()> *onDisconnectedCallback) {
+    onDisconnectedCallbacks.erase(std::remove_if(onDisconnectedCallbacks.begin(), onDisconnectedCallbacks.end(),
+                                               [onDisconnectedCallback](const std::function<void()> &callback) -> bool {
+                                                   return &callback == onDisconnectedCallback;
+                                               }),
+                                  onDisconnectedCallbacks.end());
   }
 
   void setAPPageParams(WiFiManager &wm) {
@@ -163,7 +190,8 @@ namespace coop_wifi {
       const vector<function<void()>> &_onConnectedCallbacks,
       const vector<function<void()>> &_onIPAddressCallbacks,
       const vector<function<void()>> &_onDisconnectedCallbacks) {
-    init(*CoopLogger::getDefaultPrintStream(), _onConnectedCallbacks, _onIPAddressCallbacks, _onDisconnectedCallbacks);
+    init(*CoopLogger::getDefaultPrintStream(), _onConnectedCallbacks,
+         _onIPAddressCallbacks, _onDisconnectedCallbacks);
   }
   
   void listNetworks(Print &_printStream) {

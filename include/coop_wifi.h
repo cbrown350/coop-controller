@@ -2,6 +2,7 @@
 #define COOP_WIFI_H
 
 #include <vector>
+#include <functional>
 #include "HardwareSerial.h"
 
 #include "coop_settings.h"
@@ -33,9 +34,12 @@ namespace coop_wifi {
       const std::vector<std::function<void()>> &onIPAddressCallbacks={}, 
       const std::vector<std::function<void()>> &onDisconnectedCallbacks={});
 
-  void addOnConnectedCallback(const std::function<void()> &onConnectedCallback);
-  void addOnIPAddressCallback(const std::function<void()> &onIPAddressCallback);
-  void addOnDisconnectedCallback(const std::function<void()> &onDisconnectedCallback);
+  const std::function<void()> * addOnConnectedCallback(const std::function<void()> &onConnectedCallback);
+  void removeOnConnectedCallback(const std::function<void()> *onConnectedCallback);
+  const std::function<void()> * addOnIPAddressCallback(const std::function<void()> &onIPAddressCallback);
+  void removeOnIPAddressCallback(const std::function<void()> *onIPAddressCallback);
+  const std::function<void()> * addOnDisconnectedCallback(const std::function<void()> &onDisconnectedCallback);
+  void removeOnDisconnectedCallback(const std::function<void()> *onDisconnectedCallback);
 
 //  void addSetupParams(const std::vector<WiFiManagerParameter*> &setupParamObjs);
   void addSetupParams(HasConfigPageParams *hasParams);
