@@ -16,8 +16,11 @@ class SyslogCoopLogger : public CoopLogger {
 #if defined(SYSLOG_SERVER) && defined(ENABLE_LOGGING)       
                 : CoopLogger(), 
                     udpClient(),
-                    syslog(udpClient, SYSLOG_SERVER, SYSLOG_PORT, HOSTNAME, PRODUCT_NAME, LOG_KERN) {
-            syslog.log(LOG_INFO,  "Using SyslogCoopLogger");
+                    syslog(udpClient) {
+            syslog.server(SYSLOG_SERVER, SYSLOG_PORT);
+            syslog.deviceHostname(HOSTNAME);
+            syslog.defaultPriority(LOG_KERN);
+            CoopLogger::logi("syslog", "Sending SysLogs to %s:%d", SYSLOG_SERVER, SYSLOG_PORT);
         };
 
     private:
@@ -36,8 +39,12 @@ class SyslogCoopLogger : public CoopLogger {
         // only * implemented
 
         bool isConnected() {
-            return (WiFi.getMode() == WIFI_STA || WiFi.getMode() == WIFI_AP_STA) 
-                    && WiFi.status() == WL_CONNECTED;
+            if ((WiFi.getMode() == WIFI_STA || WiFi.getMode() == WIFI_AP_STA) 
+                    && WiFi.status() == WL_CONNECTED)
+                    return true;
+            // TODO: store up to so many messages and relay them when connected?
+            getDefaultPrintStream()->println("[syslog] Syslog not connected");
+            return false;
         }
         
         void v_logv(const char *msg) override {
