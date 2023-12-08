@@ -1,0 +1,200 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="CMakeRunConfigurationManager">
+    <generated>
+      <config projectName="code" targetName="PlatformIO" />
+    </generated>
+  </component>
+  <component name="CMakeSettings">
+    <configurations>
+      <configuration PROFILE_NAME="Debug" ENABLED="true" CONFIG_NAME="Debug" />
+    </configurations>
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="1fa2bd3d-1108-4a01-bf06-c08f2f1233bf" name="Changes" comment="Configure file settings">
+      <change beforePath="$PROJECT_DIR$/.devcontainer/Dockerfile" beforeDir="false" afterPath="$PROJECT_DIR$/.devcontainer/Dockerfile" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.devcontainer/mosquitto/mosquitto.conf" beforeDir="false" afterPath="$PROJECT_DIR$/.devcontainer/mosquitto/mosquitto.conf" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.devcontainer/mosquitto/password.txt" beforeDir="false" afterPath="$PROJECT_DIR$/.devcontainer/mosquitto/password.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.vscode/extensions.json" beforeDir="false" afterPath="$PROJECT_DIR$/.vscode/extensions.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.vscode/settings.json" beforeDir="false" afterPath="$PROJECT_DIR$/.vscode/settings.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs/HASS_Entities.xlsx" beforeDir="false" afterPath="$PROJECT_DIR$/docs/HASS_Entities.xlsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/example.env" beforeDir="false" afterPath="$PROJECT_DIR$/example.env" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/CoopLogger.h" beforeDir="false" afterPath="$PROJECT_DIR$/include/CoopLogger.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/DoorController.h" beforeDir="false" afterPath="$PROJECT_DIR$/include/DoorController.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/HasData.h" beforeDir="false" afterPath="$PROJECT_DIR$/include/HasData.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/MQTTController.h" beforeDir="false" afterPath="$PROJECT_DIR$/include/MQTTController.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/SyslogCoopLogger.h" beforeDir="false" afterPath="$PROJECT_DIR$/include/SyslogCoopLogger.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/coop_settings.h" beforeDir="false" afterPath="$PROJECT_DIR$/include/coop_settings.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/coop_wifi.h" beforeDir="false" afterPath="$PROJECT_DIR$/include/coop_wifi.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/include/ota_update.h" beforeDir="false" afterPath="$PROJECT_DIR$/include/ota_update.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/platformio.ini" beforeDir="false" afterPath="$PROJECT_DIR$/platformio.ini" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/sdkconfig.esp32-debug" beforeDir="false" afterPath="$PROJECT_DIR$/sdkconfig.esp32-debug" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/DoorController.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/DoorController.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/MQTTController.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/MQTTController.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/coop_wifi.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/coop_wifi.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/factory_reset.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/factory_reset.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/main.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/ota_update.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/ota_update.cpp" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="ClangdSettings">
+    <option name="formatViaClangd" value="false" />
+  </component>
+  <component name="EmbeddedSvdWindowState">
+    <option name="loadedFiles">
+      <list>
+        <option value="$USER_HOME$\.platformio\packages\framework-arduinoespressif32\tools\ide-debug\svd\esp32.svd" />
+      </list>
+    </option>
+  </component>
+  <component name="ExecutionTargetManager" SELECTED_TARGET="esp32-debug" />
+  <component name="ExternalProjectsData">
+    <projectState path="$PROJECT_DIR$">
+      <ProjectState />
+    </projectState>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="MarkdownSettingsMigration">
+    <option name="stateVersion" value="1" />
+  </component>
+  <component name="NamedScopeManager">
+    <order>
+      <scope name="Project Source &amp; Test" />
+    </order>
+  </component>
+  <component name="PlatformioLocalSettings">
+    <option name="availableProjects">
+      <map>
+        <entry>
+          <key>
+            <ExternalProjectPojo>
+              <option name="name" value="code" />
+              <option name="path" value="$PROJECT_DIR$" />
+            </ExternalProjectPojo>
+          </key>
+          <value>
+            <list>
+              <ExternalProjectPojo>
+                <option name="name" value="code" />
+                <option name="path" value="$PROJECT_DIR$" />
+              </ExternalProjectPojo>
+            </list>
+          </value>
+        </entry>
+      </map>
+    </option>
+    <option name="projectSyncType">
+      <map>
+        <entry key="$PROJECT_DIR$" value="RE_IMPORT" />
+      </map>
+    </option>
+  </component>
+  <component name="ProjectApplicationVersion">
+    <option name="ide" value="CLion" />
+    <option name="majorVersion" value="2023" />
+    <option name="minorVersion" value="3" />
+  </component>
+  <component name="ProjectColorInfo"><![CDATA[{
+  "associatedIndex": 6
+}]]></component>
+  <component name="ProjectId" id="2ZEQURueNS2ptJEIT0lesD8WMhS" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "PlatformIO.PlatformIO.executor": "Debug",
+    "RunOnceActivity.OpenProjectViewOnStart": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.cidr.known.project.marker": "true",
+    "RunOnceActivity.readMode.enableVisualFormatting": "true",
+    "cf.first.check.clang-format": "false",
+    "cidr.known.project.marker": "true",
+    "git-widget-placeholder": "dev",
+    "ignore.virus.scanning.warn.message": "true",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "settings.editor.selected.configurable": "preferences.pluginManager",
+    "vue.rearranger.settings.migration": "true"
+  }
+}]]></component>
+  <component name="RunManager">
+    <configuration default="true" type="CLionExternalRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true">
+      <method v="2">
+        <option name="CLION.EXTERNAL.BUILD" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="PlatformIO" type="platformio" factoryName="PlatformIO Debug" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="code" TARGET_NAME="PlatformIO" CONFIG_NAME="PlatformIO">
+      <method v="2" />
+    </configuration>
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="1fa2bd3d-1108-4a01-bf06-c08f2f1233bf" name="Changes" comment="" />
+      <created>1701984774016</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1701984774016</updated>
+      <workItem from="1701984775123" duration="20680000" />
+    </task>
+    <task id="LOCAL-00001" summary="Changed '#' to be allowed as a comment delimiter, but only with a space before in case URL or other part of variable contains that char">
+      <option name="closed" value="true" />
+      <created>1702018446171</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1702018446171</updated>
+    </task>
+    <task id="LOCAL-00002" summary="Added namespace">
+      <option name="closed" value="true" />
+      <created>1702018633133</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1702018633133</updated>
+    </task>
+    <task id="LOCAL-00003" summary="Fix VS Code launch to use variables instead of fixed paths">
+      <option name="closed" value="true" />
+      <created>1702019390348</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1702019390348</updated>
+    </task>
+    <task id="LOCAL-00004" summary="Configure file settings">
+      <option name="closed" value="true" />
+      <created>1702020609316</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1702020609316</updated>
+    </task>
+    <option name="localTasksCounter" value="5" />
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="Changed '#' to be allowed as a comment delimiter, but only with a space before in case URL or other part of variable contains that char" />
+    <MESSAGE value="Added namespace" />
+    <MESSAGE value="Fix VS Code launch to use variables instead of fixed paths" />
+    <MESSAGE value="Configure file settings" />
+    <option name="LAST_COMMIT_MESSAGE" value="Configure file settings" />
+  </component>
+</project>
