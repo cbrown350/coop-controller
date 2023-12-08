@@ -17,7 +17,7 @@ def create_json_update_file(source, target, env):
             if line.strip().startswith("#") or line.strip().startswith(";") or line.strip() == "" or "=" not in line:
                 continue
             if line.split("=")[0].strip() == "SERVER_OTA_UPDATE_URL":
-                url = line.split("#")[0].split(";")[0].strip().replace('"', "").split("=")[1]
+                url = line.split(" #")[0].split(";")[0].strip().replace('"', "").split("=")[1]
                 break
         if not url:
             print("SERVER_OTA_UPDATE_URL not found in .env file, can't build json manifest for the server")
@@ -30,7 +30,7 @@ def create_json_update_file(source, target, env):
         
     project_config = configparser.ConfigParser()
     project_config.read("platformio.ini")
-    type = project_config.get("metadata", "release_name")
+    product_name = project_config.get("metadata", "product_name")
     version = project_config.get("metadata", "release_version")
     build_type = project_config.get("env"+":"+env["PIOENV"], "build_type")
     filesystem = project_config.get("env", "board_build.filesystem")
@@ -44,10 +44,10 @@ def create_json_update_file(source, target, env):
 
     # build json for manifest
     data = {}
-    type = type.replace(" ", "-").lower() + "-" + build_type
-    data["type"] = type
+    product_type = product_name.replace(" ", "-").lower() + "-" + build_type
+    data["type"] = product_type
     data["version"] = version
-    filename = type + "-v" + version + "-" + build_type
+    filename = product_type + "-v" + version + "-" + build_type
     
     server_path = os.path.dirname(url)
     

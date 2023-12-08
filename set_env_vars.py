@@ -14,7 +14,7 @@ try:
       continue
     unset.append("-D{}".format(line.split("=")[0].strip()))
     # envs.append("-D{}".format(line.split("#")[0].strip().replace('"', r'"\"')))
-    envs.append("-D"+line.split("#")[0].split(";")[0].strip().replace('"', r'\"'))
+    envs.append("-D"+line.split(" #")[0].split(";")[0].strip().replace('"', r'\"'))
   env.ProcessUnFlags(unset)
   print("build flag unset defines: {}".format(unset))
   env.Append(BUILD_FLAGS=envs)
