@@ -18,12 +18,16 @@
 #ifndef ADC_TEMP_CONVERSION_H
 #define ADC_TEMP_CONVERSION_H
 
+
+namespace adc {
 // Functions to convert the analogRead() value to a temperature in degrees C or F.
-extern float convertAnalogToTemperatureF(unsigned int analogReadValue);
-extern float approximateTemperatureFloatF(unsigned int analogReadValue);
-extern int approximateTemperatureIntF(unsigned int analogReadValue);
-extern float convertAnalogToTemperatureC(unsigned int analogReadValue);
-extern float approximateTemperatureFloatC(unsigned int analogReadValue);
-extern int approximateTemperatureIntC(unsigned int analogReadValue);
+    extern float convertAnalogToTemperatureF(unsigned int analogReadValue);
+    extern float approximateTemperatureFloatF(unsigned int analogReadValue);
+    extern int approximateTemperatureIntF(unsigned int analogReadValue);
+    extern float convertAnalogToTemperatureC(unsigned int analogReadValue);
+    extern float approximateTemperatureFloatC(unsigned int analogReadValue);
+    extern int approximateTemperatureIntC(unsigned int analogReadValue);
+    
+} // namespace adc
 
 #endif // ADC_TEMP_CONVERSION_H
