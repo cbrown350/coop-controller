@@ -9,12 +9,6 @@ template<typename K = std::string, typename D = std::string, typename T = std::m
 class HasData {
     public:
         virtual ~HasData() = default;
-//        HasData() { this->setupDataVars(); };
-//        virtual void setupDataVars() = 0;
-//        virtual T getData() { std::scoped_lock l{_dataMutex}; return _data; };
-//        virtual D getData(const K &key) { std::scoped_lock l{_dataMutex}; return _data[key]; };
-//        virtual void setData(const T& data) { std::scoped_lock l{_dataMutex}; _data = data; };
-//        virtual void setData(const K &key, const D &value) { std::scoped_lock l{_dataMutex}; _data[key] = value; };
 
         template<typename X>
         void setData(const K &key, const X &value) {
