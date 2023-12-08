@@ -17,6 +17,7 @@ RUN apt-get update \
         bc \
         sudo \
         build-essential \
+        software-properties-common \
         ca-certificates \
         clang \
         curl \
@@ -45,6 +46,11 @@ RUN apt-get update \
     && apt-get autoremove -y \
     && apt-get clean autoclean -y
     # && rm -rf /var/lib/apt/lists/*  
+
+RUN add-apt-repository ppa:openjdk-r/ppa -y \
+    && apt-get update \
+    && DEBIAN_FRONTEND=noninteractive apt-get -qqy install openjdk-21-jdk    
+    # && rm -rf /var/lib/apt/lists/*
 
 RUN git clone https://github.com/tio/tio.git \
     && cd tio \
