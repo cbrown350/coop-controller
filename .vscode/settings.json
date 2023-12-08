@@ -66,7 +66,8 @@
         "future": "cpp",
         "mutex": "cpp",
         "esp_crt_bundle.h": "c",
-        "*.ipp": "cpp"
+        "*.ipp": "cpp",
+        "any": "cpp"
     },
     // "terminal.integrated.sendKeybindingsToShell": true,
 
@@ -82,5 +83,5 @@
     "remote.localPortHost": "allInterfaces",
 
     "cmake.cmakePath": "/home/vscode/.platformio/packages/tool-cmake/bin/cmake",
-    "sonarlint.pathToCompileCommands": "${workspaceFolder}/.pio/build/esp32-debug/compile_commands.json"
+    "sonarlint.pathToCompileCommands": "${workspaceFolder}/.pio/build/esp32-debug/compile_commands.json",
 }
