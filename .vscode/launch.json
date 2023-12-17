@@ -22,6 +22,7 @@
             "projectEnvName": "esp32-debug",
             "toolchainBinDir": "${userHome}/.platformio/packages/toolchain-xtensa-esp32/bin",
             "internalConsoleOptions": "openOnSessionStart",
+            "svdPath": "${userHome}/.platformio/packages/framework-arduinoespressif32/tools/ide-debug/svd/esp32.svd",
             "preLaunchTask": {
                 "type": "PlatformIO",
                 "task": "Pre-Debug"
@@ -34,7 +35,8 @@
             "executable": "${workspaceFolder}/.pio/build/esp32-debug/firmware.elf",
             "projectEnvName": "esp32-debug",
             "toolchainBinDir": "${userHome}/.platformio/packages/toolchain-xtensa-esp32/bin",
-            "internalConsoleOptions": "openOnSessionStart"
+            "internalConsoleOptions": "openOnSessionStart",
+            "svdPath": "${userHome}/.platformio/packages/framework-arduinoespressif32/tools/ide-debug/svd/esp32.svd"
         },
         {
             "type": "platformio-debug",
@@ -44,6 +46,7 @@
             "projectEnvName": "esp32-debug",
             "toolchainBinDir": "${userHome}/.platformio/packages/toolchain-xtensa-esp32/bin",
             "internalConsoleOptions": "openOnSessionStart",
+            "svdPath": "${userHome}/.platformio/packages/framework-arduinoespressif32/tools/ide-debug/svd/esp32.svd",
             "loadMode": "manual"
         }
     ]
