@@ -28,7 +28,7 @@ cert_filenames.append(CALOCAL)
 env.Execute("%s -m pip install cryptography" % (env.get("PYTHONEXE")))
 env.Execute("%s %s --input %s" % (env.get("PYTHONEXE"), GENERATOR_PY, " ".join(cert_filenames)))
 
-new_filename = os.path.join(PROJECT_DIR, "certs", "ca_certs.bin")
+new_filename = os.path.join(PROJECT_DIR, ".pio", "build", "certs", "ca_certs.bin")
 shutil.move(os.path.join(PROJECT_DIR, "x509_crt_bundle"), new_filename)
 print("Moved {} to {}".format("x509_crt_bundle", new_filename))
 
