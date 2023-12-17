@@ -5,7 +5,7 @@
 #include "adc_calibration.h"
 
 namespace adc {
-  const esp_adc_cal_characteristics_t *adc_chars = new esp_adc_cal_characteristics_t;
+  static esp_adc_cal_characteristics_t adc_chars{};
 
   // ========= setup_adc =========
   void setup_adc(adc_unit_t adc_num,
@@ -13,12 +13,12 @@ namespace adc {
                       adc_bits_width_t bit_width,
                       uint32_t default_vref) {
     // esp_adc_cal_value_t val_type
-      esp_adc_cal_characterize(adc_num, atten, bit_width, default_vref, const_cast<esp_adc_cal_characteristics_t*>(adc_chars));
+      esp_adc_cal_characterize(adc_num, atten, bit_width, default_vref, &adc_chars);
   }
 
 
   // ========= analogRead_cal =========
-  int analogRead_cal_mv(uint8_t channel, adc_atten_t attenuation) {
+  unsigned int analogRead_cal_mv(uint8_t channel, adc_atten_t attenuation) {
     adc1_channel_t channelNum = ADC1_CHANNEL_0;
 
     /*
@@ -66,7 +66,7 @@ namespace adc {
     }
 
     adc1_config_channel_atten(channelNum, attenuation);
-    return esp_adc_cal_raw_to_voltage(analogRead(channel), adc_chars);
+    return esp_adc_cal_raw_to_voltage(analogRead(channel), &adc_chars);
   }
 
 } // namespace adc  
