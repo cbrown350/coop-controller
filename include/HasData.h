@@ -4,6 +4,7 @@
 #include <mutex>
 #include <map>
 #include <string>
+#include <utility>
 #include <Preferences.h>
 #include "CoopLogger.h"
 
@@ -12,9 +13,11 @@ class HasData {
     public:
         static constexpr const char * TAG{"hsdta"};
 
+        const std::string instanceID;
+
         virtual ~HasData() = default;
 
-        [[nodiscard]] virtual const std::string& getInstanceID() = 0;
+        [[nodiscard]] virtual const std::string& getInstanceID() const { return instanceID; }
 
         [[nodiscard]] virtual const std::vector<std::string> &getNVSIDs() const { static const std::vector<std::string> empty = {}; return empty; }
         [[nodiscard]] virtual const char *getNVSNS() const { return "NONE"; }
@@ -65,10 +68,12 @@ class HasData {
             }
 
             std::scoped_lock l{_dataMutex};
+            const auto & data = getData();
+            const auto & readOnlyKeys = getReadOnlyKeys();
             for(auto &key : getNVSIDs()) {
-                if(_data.find(key) != _data.end()) {
-                    CoopLogger::logv(TAG, "Saving %s = %s", key.c_str(), _data[key].c_str());
-                    nvs.putString(key.c_str(), _data[key].c_str());
+                if(data.find(key) != data.end() && std::find(readOnlyKeys.begin(), readOnlyKeys.end(), key) == readOnlyKeys.end()) {
+                    CoopLogger::logv(TAG, "Saving %s = %s", key.c_str(), data[key].c_str());
+                    nvs.putString(key.c_str(), data[key].c_str());
                 }
             }
 
@@ -95,19 +100,44 @@ class HasData {
             return true;
         }
 
+        std::vector<std::string> getKeys() {
+            std::scoped_lock l{_dataMutex};
+            std::vector<std::string> keys;
+            for(auto &pair : _data) {
+                keys.emplace_back(pair.first);
+            }
+            return keys;
+        }
+
+        std::vector<std::string> getReadOnlyKeys() {
+            return {};
+        }
+
+        std::vector<std::string> getWriteableKeys() {
+            std::scoped_lock l{_dataMutex};
+            std::vector<std::string> keys;
+            auto &readOnlyKeys = getReadOnlyKeys();
+            for(auto &pair : _data) {
+                if(std::find(readOnlyKeys.begin(), readOnlyKeys.end(), pair.first) == readOnlyKeys.end()) {
+                    keys.emplace_back(pair.first);
+                }
+            }
+            return keys;
+        }
+
         std::scoped_lock<std::mutex> getDataLock() const {
             return std::scoped_lock{_dataMutex};
         }
 
         // getters
-        virtual T getData() {
+        virtual T getData() {  // TODO: refactor subclasses to allow const method
             std::scoped_lock l{_dataMutex};
             return _data;
         }
 
         virtual T& getDataRef() { return _data; }
 
-        virtual D get(const K &key) {
+        virtual D get(const K &key) { // TODO: refactor subclasses to allow const method
             std::scoped_lock l{_dataMutex};
             if(_data.find(key) == _data.end()) {
                 static const D empty{};
@@ -137,10 +167,16 @@ class HasData {
 
         // setters
         virtual void setData(const T &data) {
-            std::scoped_lock l{_dataMutex};
-            for(auto [key, value] : data) {
-                _data[key] = value;
+//            std::scoped_lock l{_dataMutex};
+            std::vector<std::string> changedKeys;
+            auto &readOnlyKeys = getReadOnlyKeys();
+            for(auto &pair : data) {
+                if(std::find(readOnlyKeys.begin(), readOnlyKeys.end(), pair.first) == readOnlyKeys.end()) {
+                    _data[pair.first] = pair.second;
+                    changedKeys.emplace_back(pair.first);
+                }
             }
+            onDataChanged(changedKeys);
         }
 
 //        template<typename X>
@@ -151,6 +187,7 @@ class HasData {
         virtual void set(const K &key, const std::string &value) {
             std::scoped_lock l{_dataMutex};
             _data[key] = value;
+            onDataChanged({key});
         }
 //        virtual void set(const K &key, const char *value) {
 //            std::scoped_lock l{_dataMutex};
@@ -164,6 +201,10 @@ class HasData {
         mutable std::mutex _dataMutex;
         T _data{};
         Preferences nvs{};
+
+        explicit HasData(std::string instanceID) : instanceID(std::move(instanceID)) {}
+
+        virtual void onDataChanged(const std::vector<std::string> &keys) = 0;
 };
 
 
