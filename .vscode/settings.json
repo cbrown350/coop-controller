@@ -83,5 +83,4 @@
     "remote.localPortHost": "allInterfaces",
 
     "cmake.cmakePath": "/home/vscode/.platformio/packages/tool-cmake/bin/cmake",
-    "sonarlint.pathToCompileCommands": "${workspaceFolder}/.pio/build/esp32-debug/compile_commands.json",
 }
