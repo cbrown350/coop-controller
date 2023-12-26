@@ -18,4 +18,14 @@ namespace utils {
         }
         return result;
     }
+
+    std::string join(const std::vector<std::string> &strings, const std::string &separator) {
+        std::string result;
+        for(auto it = strings.begin(); it != strings.end(); ++it) {
+            result += *it;
+            if(it != strings.end() - 1)
+                result += separator;
+        }
+        return result;
+    }
 } // namespace utils
