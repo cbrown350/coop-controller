@@ -6,6 +6,7 @@
 #include <memory>
 #include <string>
 #include <stdexcept>
+#include <vector>
 #include <FreeRTOSConfig.h>
 #include <freertos/portmacro.h>
 
@@ -27,7 +28,20 @@ namespace utils {
         return {buf.get(), buf.get() + size - 1}; // We don't want the '\0' inside
     }
 
+    // https://stackoverflow.com/questions/65195841/hash-function-to-switch-on-a-string
+    constexpr uint64_t hashstr(const char* s, size_t index = 0) {
+        return s + index == nullptr || s[index] == '\0' ? 55 : hashstr(s, index + 1) * 33 + (unsigned char)(s[index]);
+    }
+
     std::vector<std::string> split(std::string_view view, char i);
+    std::string join(const std::vector<std::string> &strings, const std::string &separator);
+
+    template<typename T>
+    std::vector<T> concat(const std::vector<T>& v1, const std::vector<T>& v2){
+        std::vector<T> new_v(std::begin(v1), std::end(v1));
+        new_v.insert(std::end(new_v), std::begin(v2), std::end(v2));
+        return new_v;
+    }
 } // namespace utils
 
 inline unsigned esp_int_level[portNUM_PROCESSORS];
