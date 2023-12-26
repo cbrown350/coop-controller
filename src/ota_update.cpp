@@ -142,10 +142,10 @@ namespace ota_update {
                 })
             .onEnd([]() {
                 CoopLogger::logi(TAG, "%s OTA update finished", type.c_str());
-                if(type.compare("filesystem") == 0) 
+                if(type == "filesystem")
                     SPIFFS.begin();
                 })
-            .onProgress([](unsigned int progress, unsigned int total) {
+            .onProgress([](unsigned progress, unsigned total) {
                 CoopLogger::getDefaultPrintStream()->printf("%s update progress: %u%%           \r", type.c_str(), (progress / (total / 100)));
                 })
             .onError([](ota_error_t error) {
@@ -163,7 +163,8 @@ namespace ota_update {
         }
     }
 
-    void init() {
+    void startLoop() {
+        CoopLogger::logv(TAG, "[startLoop]");
         devOTALoopThreadStop = false;
         devOTALoopThread = new std::thread(devOtaHandle);
 
@@ -180,7 +181,8 @@ namespace ota_update {
 #endif // SERVER_OTA_UPDATE_URL                
     }
 
-    void deinit() {
+    void stopLoop() {
+        CoopLogger::logv(TAG, "[stopLoop]");
         if(devOTALoopThread) {
             {
                 std::scoped_lock<std::mutex> l(devOTALoopMutex);

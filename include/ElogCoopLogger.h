@@ -44,7 +44,7 @@ class ElogCoopLogger : public CoopLogger {
                 int availableForWrite() override { return 1; };
 
             private:
-                static const int BUFFER_SIZE = 150;
+                constexpr static int BUFFER_SIZE = 150;
                 Elog &elog;          
                 char buffer[BUFFER_SIZE];
                 int bufferIdx = 0;

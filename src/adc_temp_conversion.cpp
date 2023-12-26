@@ -20,35 +20,35 @@
 
 
 namespace adc {
-  float convertAnalogToTemperature(unsigned int analogReadValue);
-  float approximateTemperatureFloat(unsigned int analogReadValue);
-  int approximateTemperatureInt(unsigned int analogReadValue);
+  float convertAnalogToTemperature(unsigned analogReadValue);
+  float approximateTemperatureFloat(unsigned analogReadValue);
+  unsigned approximateTemperatureInt(unsigned analogReadValue);
 
   float convertTempCtoF(float tempC) {
     return (tempC * 9.0f / 5.0f) + 32.0f;
   }
 
-  float convertAnalogToTemperatureF(unsigned int analogReadValue) {
+  float convertAnalogToTemperatureF(unsigned analogReadValue) {
     return convertTempCtoF(convertAnalogToTemperature(analogReadValue));
   }
 
-  float approximateTemperatureFloatF(unsigned int analogReadValue) {
+  float approximateTemperatureFloatF(unsigned analogReadValue) {
     return convertTempCtoF(approximateTemperatureFloat(analogReadValue));
   }
 
-  int approximateTemperatureIntF(unsigned int analogReadValue) {
+  int approximateTemperatureIntF(unsigned analogReadValue) {
     return static_cast<int>(convertTempCtoF((float)approximateTemperatureInt(analogReadValue)));
   }
 
-  float convertAnalogToTemperatureC(unsigned int analogReadValue) {
+  float convertAnalogToTemperatureC(unsigned analogReadValue) {
     return convertAnalogToTemperature(analogReadValue);
   }
 
-  float approximateTemperatureFloatC(unsigned int analogReadValue) {
+  float approximateTemperatureFloatC(unsigned analogReadValue) {
     return approximateTemperatureFloat(analogReadValue);
   }
 
-  int approximateTemperatureIntC(unsigned int analogReadValue) {
+  int approximateTemperatureIntC(unsigned analogReadValue) {
     return approximateTemperatureInt(analogReadValue);
   }
 
@@ -78,7 +78,7 @@ namespace adc {
   // * \return              The temperature in 0.1 °C
   // *
   // */
-  // int NTC_ADC2Temperature(unsigned int adc_value) { 
+  // unsigned NTC_ADC2Temperature(unsigned adc_value) {
   //   int p1,p2;
   //  * Estimate the interpolating point before and after the ADC value. */
   //   p1 = NTC_table[ (adc_value >> 5)  ];
@@ -127,7 +127,7 @@ namespace adc {
    *  @return  Temperature in °C
    */
 
-  float  convertAnalogToTemperature(unsigned int analogReadValue)
+  float  convertAnalogToTemperature(unsigned analogReadValue)
   {
     // If analogReadValue is 1023, we would otherwise cause a Divide-By-Zero,
     // Treat as crazy out-of-range temperature.
@@ -158,7 +158,7 @@ namespace adc {
    * @return  Temperature in °C (+/- 7.835 °C)
    */
 
-  float  approximateTemperatureFloat(unsigned int analogReadValue)
+  float  approximateTemperatureFloat(unsigned analogReadValue)
   {
     return static_cast<float>(-0.0948484354554803*analogReadValue+58.7363978660206);
   }
@@ -182,7 +182,7 @@ namespace adc {
    * @return  Temperature in °C (+/- 8.000 °C)
    */
 
-  int approximateTemperatureInt(unsigned int analogReadValue)
+  unsigned approximateTemperatureInt(unsigned analogReadValue)
   {
     return ((((long)analogReadValue*15) / -158) + 59) - 1;
   }

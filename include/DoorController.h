@@ -13,19 +13,20 @@
 // } DoorControllerData;
 
 
-class DoorController : public HasData<> {
+class DoorController : public HasData {
   public:
     void setupDataVars() {
-        setData("door_open_sensed", false);
-        setData("door_closed_sensed", false);
-        setData("door_closing", false);
-        setData("door_opening", false);
-        setData("door_closing_overload", false);
-    };
-    DoorController() {
+//        HasData::set("door_open_sensed", false);
+//        HasData::set("door_closed_sensed", false);
+//        HasData::set("door_closing", false);
+//        HasData::set("door_opening", false);
+//        HasData::set("door_closing_overload", false);
+    }
+    explicit DoorController(const std::string &instanceID, uint8_t doorIsOpenIn_b_pin, uint8_t doorIsClosedIn_b_pin,
+                            uint8_t doorOpenOut_pin, uint8_t doorCloseOut_pin, uint8_t doorIsClosingOverloadADCIn_pin) : HasData(instanceID) {
         setupDataVars();
-        CoopLogger::logi(TAG, "DoorController<T>::DoorController()");
-    };
+        CoopLogger::logv(TAG, "DoorController<T>::DoorController()");
+    }
 
   private:
       inline static int controllerID = 0;

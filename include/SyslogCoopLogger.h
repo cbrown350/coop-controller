@@ -12,13 +12,15 @@
 class SyslogCoopLogger : public CoopLogger { 
     public:
         ~SyslogCoopLogger() override = default;
-        explicit SyslogCoopLogger() 
+        explicit SyslogCoopLogger(const char* server = SYSLOG_SERVER, uint16_t port = SYSLOG_PORT, uint8_t protocol = SYSLOG_PROTO_BSD)
 #if defined(SYSLOG_SERVER) && defined(ENABLE_LOGGING)       
                 : CoopLogger(), 
                     udpClient(),
-                    syslog(udpClient) {
-            syslog.server(SYSLOG_SERVER, SYSLOG_PORT);
+                    syslog(udpClient, protocol) {
+            // TODO: use HasData to allow dynamic setting of server/port
+            syslog.server(server, port);
             syslog.deviceHostname(HOSTNAME);
+//            syslog.appName(PRODUCT_NAME);
             syslog.defaultPriority(LOG_KERN);
             CoopLogger::logi("syslog", "Sending SysLogs to %s:%d", SYSLOG_SERVER, SYSLOG_PORT);
         };

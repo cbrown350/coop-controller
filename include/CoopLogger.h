@@ -31,7 +31,7 @@ class CoopLogger {
         CoopLogger(const CoopLogger& obj) = delete; 
             
         static void setDefaultPrintStream(Print *_defaultPrintStream) {
-            // TODO: implement wrapper with mutex locking?
+            // TODO: implement wrapper class with mutex locking?
             CoopLogger::defaultPrintStream = _defaultPrintStream;
         }
         static Print *getDefaultPrintStream() {

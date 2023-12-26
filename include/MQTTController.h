@@ -16,13 +16,62 @@
 #include <any>
 
 
-class MQTTController : public HasData<>, public coop_wifi::HasConfigPageParams {
-    private:    
+class MQTTController : public HasData, public coop_wifi::ConfigWithWiFi {
+    public:
         static constexpr const char * TAG{"mqtt"};
 
-        inline static int controllerIDCount = 0;      
+        int controllerID;
 
-        int controllerID = controllerIDCount++;  
+        // Data keys
+        inline static constexpr const char * const MQTT_SERVER = "mqtt_server";
+        inline static constexpr const char * const MQTT_PORT = "mqtt_port";
+        inline static constexpr const char * const MQTT_USER = "mqtt_user";
+        inline static constexpr const char * const MQTT_PASSWORD = "mqtt_password";
+
+        inline static const std::vector<std::string> readOnlyKeys{};
+
+        explicit MQTTController(const std::string &instanceID) : HasData(instanceID) {
+            HasData::readOnlyKeys = MQTTController::readOnlyKeys;
+            static int controllerIDCount{0};
+            controllerID = controllerIDCount++;
+
+            updateDataVarsFromWifiParams();
+        }
+        ~MQTTController() override;
+
+        void init();
+        void startLoop();
+        void stopLoop();
+        void setLastWill(const std::string &lastWillTopic, const std::string &offlineMsg = "offline", const std::string &onlineMsg = "online");
+        void clearLastWill();
+
+        void updateDataVarsFromWifiParams();
+        void updateWiFiParamsFromDataVars();
+
+        [[nodiscard]] std::vector<WiFiManagerParameter *> getSettingParamsNoUpdate();
+        // coop_wifi::ConfigWithWiFi
+        [[nodiscard]] std::vector<WiFiManagerParameter *> getSettingParams() override;
+        void afterConfigPageSave() override;
+
+        void registerHasDataItem(HasData *item);
+        void unregisterHasDataItem(HasData *item);
+
+        // HasData
+        [[nodiscard]] std::string getNvsNamespace() const override { return MQTTController::TAG; }
+        [[nodiscard]] std::vector<std::string> getNvsKeys() const override {
+            const static std::vector<std::string> ids = {
+                    MQTT_SERVER,
+                    MQTT_PORT,
+                    MQTT_USER,
+                    MQTT_PASSWORD
+            };
+            return ids;
+        }
+
+
+
+    private:
+        std::mutex initMutex;
 
         WiFiClient *net = nullptr;
         MQTTClient client{MQTT_MAX_PACKET};
@@ -48,22 +97,30 @@ class MQTTController : public HasData<>, public coop_wifi::HasConfigPageParams {
             }
         }
 
-        WiFiManagerParameter mqtt_server{getValueWithID("mqtt_server"),
+#ifdef DEFAULT_MQTT_SERVER
+#define DEFAULT_MQTT_SERVER_DEFAULT DEFAULT_MQTT_SERVER
+#else
+#define DEFAULT_MQTT_SERVER_DEFAULT ""
+#endif
+        WiFiManagerParameter mqtt_server{getValueWithID(MQTT_SERVER),
                                          getValueWithID("MQTT Server", true),
-                                         nullptr,
+                                         DEFAULT_MQTT_SERVER_DEFAULT,
                                          MAX_WIFI_EXTRA_PARAM_MAX_LENGTH};
-        WiFiManagerParameter mqtt_port{getValueWithID("mqtt_port"),
+        WiFiManagerParameter mqtt_port{getValueWithID(MQTT_PORT),
                                        getValueWithID("MQTT Port", true),
-                                       nullptr,
+                                       DEFAULT_MQTT_PORT,
                                        MAX_WIFI_EXTRA_PARAM_MAX_LENGTH};
-        WiFiManagerParameter mqtt_user{getValueWithID("mqtt_user"),
+        WiFiManagerParameter mqtt_user{getValueWithID(MQTT_USER),
                                        getValueWithID("MQTT User", true),
-                                       nullptr,
+                                       DEFAULT_MQTT_USER,
                                        MAX_WIFI_EXTRA_PARAM_MAX_LENGTH};
-        WiFiManagerParameter mqtt_password{getValueWithID("mqtt_password"),
+        WiFiManagerParameter mqtt_password{getValueWithID(MQTT_PASSWORD),
                                            getValueWithID("MQTT Password", true),
-                                           nullptr,
+                                           DEFAULT_MQTT_PASSWORD,
                                            MAX_WIFI_EXTRA_PARAM_MAX_LENGTH};
+
+        std::mutex hasDataItemsMutex;
+        std::vector<HasData *> hasDataItems;
 
         void messageReceived(String &topic, String &payload);
         void connect();
@@ -71,40 +128,6 @@ class MQTTController : public HasData<>, public coop_wifi::HasConfigPageParams {
         void mqttLoop();
         void publishData();
         void registerSubscriptions();
-
-    public:
-        void setupDataVars() {
-//#ifdef DEFAULT_MQTT_SERVER
-//            _data["mqtt_server"] = DEFAULT_MQTT_SERVER;
-//#else
-//            _data["mqtt_server"] = "";
-//#endif
-//            _data["mqtt_port"] = DEFAULT_MQTT_PORT;
-//            _data["mqtt_user"] = DEFAULT_MQTT_USER;
-//            _data["mqtt_password"] = DEFAULT_MQTT_PASSWORD;
-
-#ifdef DEFAULT_MQTT_SERVER
-            setData("mqtt_server", DEFAULT_MQTT_SERVER);
-#else
-            setData("mqtt_server", "");
-#endif
-            setData("mqtt_port", DEFAULT_MQTT_PORT);
-            setData("mqtt_user", DEFAULT_MQTT_USER);
-            setData("mqtt_password", DEFAULT_MQTT_PASSWORD);
-        };
-        MQTTController() {
-            setupDataVars();
-        };
-        ~MQTTController() override;
-
-        void init();
-        void deinit();
-        void setLastWill(const std::string &lastWillTopic, const std::string &offlineMsg = "offline", const std::string &onlineMsg = "online");
-        void clearLastWill();
-
-        // HasWiFiConfigPageParams
-        [[nodiscard]] std::vector<WiFiManagerParameter *> getSettingParams() override;
-        void afterConfigPageSave() override;
 };
 
 #endif // MQTT_CONTROLLER_H

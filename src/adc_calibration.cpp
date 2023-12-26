@@ -18,7 +18,7 @@ namespace adc {
 
 
   // ========= analogRead_cal =========
-  unsigned int analogRead_cal_mv(uint8_t channel, adc_atten_t attenuation) {
+  unsigned analogRead_cal_mv(uint8_t channel, adc_atten_t attenuation) {
     adc1_channel_t channelNum = ADC1_CHANNEL_0;
 
     /*

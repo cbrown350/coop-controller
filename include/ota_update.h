@@ -3,8 +3,8 @@
 
 
 namespace ota_update {    
-    void init();   
-    void deinit(); 
+    void startLoop();
+    void stopLoop();
 } // namespace ota_update
 
 #endif // OTA_UPDATE_H_

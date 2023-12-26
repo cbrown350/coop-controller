@@ -8,11 +8,11 @@
 #include <esp_adc_cal.h>
 
 namespace adc {
-    extern void setup_adc(adc_unit_t adc_num,
+    void setup_adc(adc_unit_t adc_num,
                         adc_atten_t atten,
                         adc_bits_width_t bit_width,
                         uint32_t default_vref);
-    extern int analogRead_cal_mv(uint8_t channel, adc_atten_t attenuation);
+    unsigned analogRead_cal_mv(uint8_t channel, adc_atten_t attenuation);
 
 } // namespace adc
 

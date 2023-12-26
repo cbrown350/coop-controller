@@ -52,6 +52,20 @@
 #pragma warning("DEV_OTA_UPDATE_PASSWORD not defined, OTA updates can be performed without any password protection")
 #endif
 
+#ifndef DEFAUlT_TIMEZONE
+#define DEFAUlT_TIMEZONE                        "America/Denver"
+#endif
+
+#ifndef NTP_SERVER1_DEFAULT
+#define NTP_SERVER1_DEFAULT                     "pool.ntp.org"
+#endif
+//#ifndef NTP_SERVER2_DEFAULT                     // curently not used by ESP32 in configTzTime function call
+//#define NTP_SERVER2_DEFAULT                     "time.cloudflare.com"
+//#endif
+//#ifndef NTP_SERVER3_DEFAULT                     // curently not used by ESP32 in configTzTime function call
+//#define NTP_SERVER3_DEFAULT                     "time.google.com"
+//#endif
+
 // DEFAULT_MQTT_SERVER                          Set if using MQTT
 
 #ifndef DEFAULT_MQTT_PORT
@@ -64,6 +78,10 @@
 
 #ifndef DEFAULT_MQTT_PASSWORD
 #define DEFAULT_MQTT_PASSWORD                   "password"
+#endif
+
+#ifndef MQTT_PUB_INTERVAL_SECS
+#define MQTT_PUB_INTERVAL_SECS                  10
 #endif
 
 #ifndef MQTT_MAX_PACKET                         // this will limit things such as password length
@@ -112,7 +130,8 @@
 #define WATER_METER_PULSE_IN                    GPIO_NUM_19
 #define OLED_I2C_SDA                            GPIO_NUM_21
 #define OLED_I2C_SCL                            GPIO_NUM_22
-#define SPOTLIGHT_EN_OUT_B                      GPIO_NUM_23
+#define RUN_LIGHT_EN_OUT_B                      GPIO_NUM_23
+#define COOP_LIGHT_EN_OUT_B                     GPIO_NUM_10 // must disable QIO on flash, SD3 is used for SPI flash
 #define ZERO_CROSS_IN_B                         GPIO_NUM_27
 #define BOX_DOOR_IS_OPEN_ADC_IN                 GPIO_NUM_32
 #define OUTSIDE_TEMP_ADC_IN                     GPIO_NUM_34

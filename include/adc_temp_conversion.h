@@ -21,12 +21,12 @@
 
 namespace adc {
 // Functions to convert the analogRead() value to a temperature in degrees C or F.
-    extern float convertAnalogToTemperatureF(unsigned int analogReadValue);
-    extern float approximateTemperatureFloatF(unsigned int analogReadValue);
-    extern int approximateTemperatureIntF(unsigned int analogReadValue);
-    extern float convertAnalogToTemperatureC(unsigned int analogReadValue);
-    extern float approximateTemperatureFloatC(unsigned int analogReadValue);
-    extern int approximateTemperatureIntC(unsigned int analogReadValue);
+    float convertAnalogToTemperatureF(unsigned analogReadValue);
+    float approximateTemperatureFloatF(unsigned analogReadValue);
+    int approximateTemperatureIntF(unsigned analogReadValue);
+    float convertAnalogToTemperatureC(unsigned analogReadValue);
+    float approximateTemperatureFloatC(unsigned analogReadValue);
+    int approximateTemperatureIntC(unsigned analogReadValue);
     
 } // namespace adc
 

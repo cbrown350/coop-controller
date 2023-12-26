@@ -6,7 +6,7 @@
 #include "utils.h"
 
 #include "CoopLogger.h"
-#include <MQTT.h>
+#include "coop_time.h"
 
 
 using std::vector;
@@ -19,11 +19,29 @@ extern const uint8_t x509_crt_imported_bundle_bin_end[]   asm("_binary_x509_crt_
 
 
 void MQTTController::registerSubscriptions() {
-    client.subscribe("/topic");
+    client.subscribe("coop/#");
 }
 
 void MQTTController::publishData() {
-    client.publish("/topic", "message", true, 0);
+//    client.publish("coop/uptime", coop_time::get(coop_time::UPTIME).c_str(), true, 0);
+//    client.publish("coop/time", coop_time::get(coop_time::CURRENT_TIME).c_str(), true, 0);
+//    client.publish("coop/free_memory", coop_time::get(coop_time::FREE_MEMORY).c_str(), true, 0);
+//
+//    client.publish("coop/wifi/ssid", coop_wifi::get(coop_wifi::SSID).c_str(), true, 0);
+//    client.publish("coop/wifi/ip_address", coop_wifi::get(coop_wifi::IP_ADDRESS).c_str(), true, 0);
+//    client.publish("coop/wifi/gateway", coop_wifi::get(coop_wifi::GATEWAY).c_str(), true, 0);
+//    client.publish("coop/wifi/subnet", coop_wifi::get(coop_wifi::SUBNET).c_str(), true, 0);
+//    client.publish("coop/wifi/dns", coop_wifi::get(coop_wifi::DNS).c_str(), true, 0);
+//    client.publish("coop/wifi/mac_address", coop_wifi::get(coop_wifi::MAC_ADDRESS).c_str(), true, 0);
+//    client.publish("coop/wifi/rssi", coop_wifi::get(coop_wifi::RSSI).c_str(), true, 0);
+
+    std::scoped_lock l(hasDataItemsMutex);
+    for(auto const &item : hasDataItems) {
+        const auto &data = item->getData();
+        for(auto const &data_item : data) {
+            client.publish(("coop/" + item->getInstanceID() + "/" + data_item.first).c_str(), data_item.second.c_str(), true, 0);
+        }
+    }
 }
 
 void MQTTController::messageReceived(String &topic, String &payload) {
@@ -33,6 +51,19 @@ void MQTTController::messageReceived(String &topic, String &payload) {
     // unsubscribe as it may cause deadlocks when other things arrive while
     // sending and receiving acknowledgments. Instead, change a global variable,
     // or push to a queue and handle it in the loop after calling `client.loop()`.
+
+    std::scoped_lock l(hasDataItemsMutex);
+    if(hasDataItems.empty())
+        return;
+    const std::vector<std::string> topic_parts = utils::split(topic.c_str(), '/');
+    const auto &item_key = topic_parts[topic_parts.size() - 2];
+    const auto &item_data_key = topic_parts[topic_parts.size() - 1];
+    for(auto const &item : hasDataItems) {
+        if(item_key == item->getInstanceID()) {
+            item->set(item_data_key, payload.c_str());
+            return;
+        }
+    }
 }
 
 void MQTTController::connect() {
@@ -46,9 +77,11 @@ void MQTTController::connect() {
     if(!lastWillTopic.empty() && !offlineMsg.empty()) 
         client.setWill(lastWillTopic.c_str(), offlineMsg.c_str(), true, 0);
 
+    const char *user = getDataRef()[MQTT_USER].c_str();
+    const char *password = getDataRef()[MQTT_PASSWORD].c_str();
     strcpy(clientID, std::string(HOSTNAME "-" + std::to_string(controllerID)).c_str());
-    CoopLogger::logi(TAG, "Wifi connected, %s connecting to MQTT on %s:%s as user %s...", clientID, mqtt_server.getValue(), mqtt_port.getValue(), mqtt_user.getValue());
-    while (!client.connect(clientID, mqtt_user.getValue(), mqtt_password.getValue()) && 
+    CoopLogger::logi(TAG, "Wifi connected, %s connecting to MQTT as user %s...", clientID, user);
+    while (!client.connect(clientID, user, password) &&
         utils::wait_for<std::chrono::seconds>(std::chrono::seconds(10), loopThreadMutex, loopThreadCond, loopThreadStop)) {
         CoopLogger::getDefaultPrintStream()->print("-mqtt-");
     }
@@ -68,7 +101,7 @@ void MQTTController::disconnect() {
 
 void MQTTController::mqttLoop() {
     connect();
-    while(utils::wait_for<std::chrono::seconds>(std::chrono::seconds(1), loopThreadMutex, loopThreadCond, loopThreadStop)) {
+    while(utils::wait_for<std::chrono::seconds>(std::chrono::seconds(MQTT_PUB_INTERVAL_SECS), loopThreadMutex, loopThreadCond, loopThreadStop)) {
         if (!client.connected()) 
             connect();
         client.loop();
@@ -104,25 +137,47 @@ void MQTTController::clearLastWill() {
 }
 
 void MQTTController::init() {
-    const char* server = mqtt_server.getValue();
-    if (strcmp(server, "") == 0) {
+    CoopLogger::logv(TAG, "[init] MQTT (%d) init", controllerID);
+}
+
+void MQTTController::startLoop() {
+    std::scoped_lock l(initMutex);
+
+    updateDataVarsFromWifiParams();
+    if(!HasData::loadNvsData())
+        CoopLogger::loge(TAG, "Failed to load data from NVS");
+
+    std::string &server_str = getDataRef()[MQTT_SERVER];
+    if (server_str.empty()) {
         CoopLogger::loge(TAG, "MQTT (%d) server not set", controllerID);
         return;
     }
 
+    const char *server = server_str.c_str();
+    const char *port = getDataRef()[MQTT_PORT].c_str();
+    const char *user = getDataRef()[MQTT_USER].c_str();
+    const char *password = getDataRef()[MQTT_PASSWORD].c_str();
+
+    CoopLogger::logv(TAG, "MQTT (%d) server: %s", controllerID, server_str.c_str());
+    CoopLogger::logv(TAG, "MQTT (%d) port: %s", controllerID, port);
+    CoopLogger::logv(TAG, "MQTT (%d) user: %s", controllerID, user);
+    CoopLogger::logv(TAG, "MQTT (%d) password: %s", controllerID, password);
+
+
     IPAddress ip;
-    if(ip.fromString(server)) {
+    if (ip.fromString(server)) {
         net = new WiFiClient();
-        client.begin(ip, atoi(mqtt_port.getValue()), *net);
-    } else if(strcmp(mqtt_port.getValue(), "1883") == 0) { // assume insecure if standard port, otherwise will require addl handling
+        client.begin(ip, atoi(port), *net);
+    } else if (strcmp(mqtt_port.getValue(), "1883") ==
+               0) { // assume insecure if standard port, otherwise will require addl handling
         net = new WiFiClient();
-        client.begin(server, atoi(mqtt_port.getValue()), *net);
+        client.begin(server, atoi(port), *net);
     } else {
         net = new WiFiClientSecure();
-#ifdef CONFIG_MBEDTLS_CERTIFICATE_BUNDLE    
-        ((WiFiClientSecure*)net)->setCACertBundle(x509_crt_imported_bundle_bin_start);
+#ifdef CONFIG_MBEDTLS_CERTIFICATE_BUNDLE
+        ((WiFiClientSecure *) net)->setCACertBundle(x509_crt_imported_bundle_bin_start);
 #endif // CONFIG_MBEDTLS_CERTIFICATE_BUNDLE   
-        client.begin(server, atoi(mqtt_port.getValue()), *net);
+        client.begin(server, atoi(port), *net);
     }
 
     client.onMessage([this](String &topic, String &payload) { messageReceived(topic, payload); });
@@ -132,10 +187,11 @@ void MQTTController::init() {
     CoopLogger::logi(TAG, "MQTT (%d) started", controllerID);
 }
 
-void MQTTController::deinit() {
+void MQTTController::stopLoop() {
+    std::scoped_lock l(initMutex);
     if(loopThread) {
         {
-            std::scoped_lock<std::mutex> l(loopThreadMutex);
+            std::scoped_lock<std::mutex> _l(loopThreadMutex);
             loopThreadStop = true;
         }
         loopThreadCond.notify_one();
@@ -151,20 +207,52 @@ void MQTTController::deinit() {
 }
 
 MQTTController::~MQTTController() {
-    deinit();
+    stopLoop();
 }
 
-vector<WiFiManagerParameter *> MQTTController::getSettingParams() {
-    mqtt_server.setValue(_data["mqtt_server"].c_str(), MAX_WIFI_EXTRA_PARAM_MAX_LENGTH);
-    mqtt_port.setValue(_data["mqtt_port"].c_str(), MAX_WIFI_EXTRA_PARAM_MAX_LENGTH);
-    mqtt_user.setValue(_data["mqtt_user"].c_str(), MAX_WIFI_EXTRA_PARAM_MAX_LENGTH);
-    mqtt_password.setValue(_data["mqtt_password"].c_str(), MAX_WIFI_EXTRA_PARAM_MAX_LENGTH);
+void MQTTController::updateDataVarsFromWifiParams() {
+    CoopLogger::logv(TAG, "[updateDataVarsFromWifiParams]");
+    for(auto &setting : getSettingParamsNoUpdate()) {
+        HasData::set(setting->getID(), setting->getValue());
+    }
+}
+
+void MQTTController::updateWiFiParamsFromDataVars() {
+    CoopLogger::logv(TAG, "[updateWiFiParamsFromDataVars]");
+    auto l = HasData::getDataLock();
+    std::map<std::string, std::string> &_data = HasData::getDataRef();
+
+    for(auto &setting : getSettingParamsNoUpdate()) {
+        std::string &value = _data[setting->getID()];
+        if(!value.empty())
+            setting->setValue(value.c_str(), MAX_WIFI_EXTRA_PARAM_MAX_LENGTH);
+    }
+}
+
+vector<WiFiManagerParameter *> MQTTController::getSettingParamsNoUpdate() {
+    CoopLogger::logv(TAG, "[getSettingParamsNoUpdate]");
     return {&mqtt_server, &mqtt_port, &mqtt_user, &mqtt_password};
 }
 
+vector<WiFiManagerParameter *> MQTTController::getSettingParams() {
+    CoopLogger::logv(TAG, "[getSettingParams]");
+    updateWiFiParamsFromDataVars();
+    return getSettingParamsNoUpdate();
+}
+
 void MQTTController::afterConfigPageSave() {
-    _data.emplace("mqtt_server", mqtt_server.getValue());
-    _data.emplace("mqtt_port", mqtt_port.getValue());
-    _data.emplace("mqtt_user", mqtt_user.getValue());
-    _data.emplace("mqtt_password", mqtt_password.getValue());
+    CoopLogger::logv(TAG, "[afterConfigPageSave]");
+    updateDataVarsFromWifiParams();
+    if(!HasData::saveNvsData())
+        CoopLogger::loge(TAG, "Failed to save data to NVS");
+}
+
+void MQTTController::registerHasDataItem(HasData *item) {
+    std::scoped_lock l(hasDataItemsMutex);
+    hasDataItems.emplace_back(item);
+}
+
+void MQTTController::unregisterHasDataItem(HasData *item) {
+    std::scoped_lock l(hasDataItemsMutex);
+    hasDataItems.erase(std::remove(hasDataItems.begin(), hasDataItems.end(), item), hasDataItems.end());
 }

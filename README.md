@@ -79,6 +79,7 @@ Based on the ESP32 controller (ESP32-DevkitC)
     * [ ] Add server settings to WiFi config setup
     * [ ] MQTT status
     * [ ] Web page status and settings
+* [ ] Backup/Restore config settings
 
 Future Functions
 
