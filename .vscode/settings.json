@@ -67,7 +67,14 @@
         "mutex": "cpp",
         "esp_crt_bundle.h": "c",
         "*.ipp": "cpp",
-        "any": "cpp"
+        "any": "cpp",
+        "variant": "cpp",
+        "bit": "cpp",
+        "compare": "cpp",
+        "concepts": "cpp",
+        "numbers": "cpp",
+        "semaphore": "cpp",
+        "stop_token": "cpp"
     },
     // "terminal.integrated.sendKeybindingsToShell": true,
 
@@ -83,4 +90,49 @@
     "remote.localPortHost": "allInterfaces",
 
     "cmake.cmakePath": "/home/vscode/.platformio/packages/tool-cmake/bin/cmake",
+    "editor.tokenColorCustomizations": {
+        "[*Light*]": {
+            "textMateRules": [
+                {
+                    "scope": "ref.matchtext",
+                    "settings": {
+                        "foreground": "#000"
+                    }
+                }
+            ]
+        },
+        "[*Dark*]": {
+            "textMateRules": [
+                {
+                    "scope": "ref.matchtext",
+                    "settings": {
+                        "foreground": "#fff"
+                    }
+                }
+            ]
+        },
+        "textMateRules": [
+            {
+                "scope": "googletest.failed",
+                "settings": {
+                    "foreground": "#f00"
+                }
+            },
+            {
+                "scope": "googletest.passed",
+                "settings": {
+                    "foreground": "#0f0"
+                }
+            },
+            {
+                "scope": "googletest.run",
+                "settings": {
+                    "foreground": "#0f0"
+                }
+            }
+        ]
+    },
+    "gtest-adapter.debugConfig": [
+        "PIO Debug"
+    ],
 }

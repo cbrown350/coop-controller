@@ -50,6 +50,7 @@ build
 .vscode/c_cpp_properties.json
 .vscode/ipch
 .vscode/data
+.vscode/launch.json 
 compile_commands.json
 .devcontainer/data
 managed_components
@@ -75,6 +76,7 @@ scratch.txt
 .idea/dictionaries
 .idea/vcs.xml
 .idea/jsLibraryMappings.xml
+.idea/code.iml
 
 # Sensitive or high-churn files:
 .idea/dataSources.ids
