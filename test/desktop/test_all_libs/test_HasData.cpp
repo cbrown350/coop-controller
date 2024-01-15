@@ -26,6 +26,8 @@ public:
     std::string test_key3 = "test_value3";
 
     mutable bool objUpdated = false;
+    inline constexpr static const char * TAG{"thasdt"};
+    [[nodiscard]] const char * getTag() const override { return TAG; }
 
     [[nodiscard]] std::string getWithOptLock(const std::string &key, bool noLock) const override {
         Logger::logd(TAG, "getWithOptLock %s", key.c_str());

@@ -16,6 +16,7 @@
 class DoorController : public HasData<> {
   public:
     inline static constexpr const char * TAG{"DoorController"};
+    [[nodiscard]] const char * getTag() const override { return TAG; }
     
     void setupDataVars() {
 //        HasData::set("door_open_sensed", false);

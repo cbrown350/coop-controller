@@ -6,6 +6,8 @@
 class TestHasDataObj : public HasData<> {
 public:
     explicit TestHasDataObj(const std::string &instanceID) : HasData(instanceID) {}
+    inline constexpr static const char * TAG{"thasdO"};
+    [[nodiscard]] const char * getTag() const override { return TAG; }
 
     [[nodiscard]] std::vector<std::string> getKeys() const override { return {"test_key1", "test_key2"}; }
 

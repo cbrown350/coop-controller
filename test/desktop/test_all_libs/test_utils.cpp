@@ -1,7 +1,6 @@
 #include <gtest/gtest.h>
 
 #include <thread>
-#include <atomic>
 #include <condition_variable>
 #include <string>
 #include <vector>
