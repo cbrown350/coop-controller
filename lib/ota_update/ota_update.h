@@ -6,6 +6,8 @@
 namespace ota_update {
     using Logger = Logger<>;
 
+    inline static constexpr const char * const TAG{"otaud"};
+
     void startLoop(bool restartOnUpdate = false);
     void stopLoop();
 } // namespace ota_update

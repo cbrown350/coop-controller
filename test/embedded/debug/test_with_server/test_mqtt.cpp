@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 
 #include "../../TestLoggerFixture.h"
+#include "../TestHasDataObj.h"
 
 #include "settings.h"
 
@@ -15,12 +16,28 @@ MQTTController mqtt2{"mqtt2", "test_coop2"};
 
 class TestMQTT : public TestLoggerFixture { };
 
-TEST_F(TestMQTT, TestMQTT2StartStop) {
+TEST_F(TestMQTT, TestMQTTConnect) {    
+    // GTEST_SKIP();
+    Logger<>::logd(TAG, "test_mqtt_connect");     
+    mqtt.init();
+    mqtt.setLastWill("test_coop/status");
+    mqtt.startLoop();
+    std::this_thread::sleep_for(std::chrono::seconds(4));
+    log->printLogs();
+    EXPECT_TRUE(log->checkMatchesLogEntryOrBeforeMsg(0, "[mqtt ] [startLoop] MQTT (0) startLoop")) << "startLoop call failed";
+    
+    mqtt.stopLoop();
+    EXPECT_TRUE(log->checkMatchesLogEntryOrBeforeMsg(0, "[mqtt ] [stopLoop] MQTT (0) stopLoop")) << "stopLoop call failed";    
+}
+
+TEST_F(TestMQTT, TestMQTT2Data) {
     // GTEST_SKIP();
     Logger<>::logd(TAG, "test_mqtt2_data");
 
+    TestHasDataObj test_data2{"test_data2"};
     mqtt2.init();
     mqtt2.setLastWill("test_coop2/status");
+    mqtt2.registerHasDataItem(&test_data2);
 
     utils::printDataDebug("1- mqtt2", mqtt2.getData());
 

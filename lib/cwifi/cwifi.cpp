@@ -5,7 +5,7 @@
 
 #include <Logger.h>
 #include "cwifi.h"
-#include <utils.h>
+#include "wifi_reason_lookup.h"
 
 #include <thread>
 #include <vector>
@@ -15,14 +15,14 @@ namespace cwifi {
   using std::function;
   using std::vector;
 
-  inline static constexpr const char * const TAG{"cwifi"};
-
   namespace {
       class _ : public HasData<> {
           public:
               _() : HasData("wifi") {};
               using HasData::getData;
               using HasData::get;
+
+              [[nodiscard]] const char * getTag() const override { return TAG; }
 
               [[nodiscard]] std::vector<std::string> getNvsKeys() const override { return cwifi::nvsDataKeys; }
               [[nodiscard]] std::vector<std::string> getKeys() const override { return cwifi::readOnlyKeys; }
@@ -37,48 +37,71 @@ namespace cwifi {
               using HasData::set;
 
               [[nodiscard]] std::string getWithOptLock(const std::string &key, bool noLock) const override {
-                  std::unique_lock l(_dataMutex, std::defer_lock);
+//                  std::unique_lock l(_dataMutex, std::defer_lock);
+//
+//                  switch(utils::hashstr(key.c_str())) {
+//                      case utils::hashstr(SSID): {
+//                          if(!noLock)
+//                              l.lock();
+//                          return WiFi.SSID().c_str();
+//                      }
+//                      case utils::hashstr(IP_ADDRESS): {
+//                          if(!noLock)
+//                              l.lock();
+//                          return WiFi.localIP().toString().c_str();
+//                      }
+//                      case utils::hashstr(GATEWAY): {
+//                          if(!noLock)
+//                              l.lock();
+//                          return WiFi.gatewayIP().toString().c_str();
+//                      }
+//                      case utils::hashstr(SUBNET): {
+//                          if(!noLock)
+//                              l.lock();
+//                          return WiFi.subnetMask().toString().c_str();
+//                      }
+//                      case utils::hashstr(DNS): {
+//                          if(!noLock)
+//                              l.lock();
+//                          return WiFi.dnsIP().toString().c_str();
+//                      }
+//                      case utils::hashstr(MAC_ADDRESS): {
+//                          if(!noLock)
+//                              l.lock();
+//                          return WiFi.macAddress().c_str();
+//                      }
+//                      case utils::hashstr(RSSI): {
+//                          if(!noLock)
+//                              l.lock();
+//                          return std::to_string(WiFi.RSSI());
+//                      }
+//                      default: {}
+//                  }
+//                  Logger::logw(TAG, "Invalid key %s", key.c_str());
+//                  return HasData::EMPTY_VALUE;
 
-                  switch(utils::hashstr(key.c_str())) {
-                      case utils::hashstr(SSID): {
-                          if(!noLock)
-                              l.lock();
-                          return WiFi.SSID().c_str();
-                      }
-                      case utils::hashstr(IP_ADDRESS): {
-                          if(!noLock)
-                              l.lock();
-                          return WiFi.localIP().toString().c_str();
-                      }
-                      case utils::hashstr(GATEWAY): {
-                          if(!noLock)
-                              l.lock();
-                          return WiFi.gatewayIP().toString().c_str();
-                      }
-                      case utils::hashstr(SUBNET): {
-                          if(!noLock)
-                              l.lock();
-                          return WiFi.subnetMask().toString().c_str();
-                      }
-                      case utils::hashstr(DNS): {
-                          if(!noLock)
-                              l.lock();
-                          return WiFi.dnsIP().toString().c_str();
-                      }
-                      case utils::hashstr(MAC_ADDRESS): {
-                          if(!noLock)
-                              l.lock();
-                          return WiFi.macAddress().c_str();
-                      }
-                      case utils::hashstr(RSSI): {
-                          if(!noLock)
-                              l.lock();
-                          return std::to_string(WiFi.RSSI());
-                      }
-                      default: {}
-                  }
-                  Logger::logw(TAG, "Invalid key %s", key.c_str());
-                  return HasData::EMPTY_VALUE;
+//                  return getStringDataHelper({{SSID, WiFi.SSID()},
+//                                              {IP_ADDRESS, WiFi.localIP().toString()},
+//                                              {GATEWAY, WiFi.gatewayIP().toString()},
+//                                              {SUBNET, WiFi.subnetMask().toString()},
+//                                              {DNS, WiFi.dnsIP().toString()},
+//                                              {MAC_ADDRESS, WiFi.macAddress()},
+//                                              {RSSI, String(WiFi.RSSI())}
+//                                             },
+//                                             key, noLock);
+
+                  std::unique_lock l(_dataMutex, std::defer_lock);
+                  if(!noLock)
+                    l.lock();
+                  return getStringDataHelper<String>({{SSID, WiFi.SSID()},
+                                              {IP_ADDRESS, WiFi.localIP().toString()},
+                                              {GATEWAY, WiFi.gatewayIP().toString()},
+                                              {SUBNET, WiFi.subnetMask().toString()},
+                                              {DNS, WiFi.dnsIP().toString()},
+                                              {MAC_ADDRESS, WiFi.macAddress()},
+                                              {RSSI, String(WiFi.RSSI())}
+                                             },
+                                             key, noLock || l.owns_lock(), String{HasData::EMPTY_VALUE}).c_str();
               }
 
 
@@ -89,31 +112,40 @@ namespace cwifi {
                       return false;
                   }
 
-                  static std::vector<std::string> keysToUpdateOnObj = {};
                   bool updated = false;
+//                  static std::vector<std::string> keysToUpdateOnObj = {};
 
 //                  std::unique_lock l{_dataMutex, std::defer_lock};
 //                  switch(utils::hashstr(key.c_str())) {
 //                      case utils::hashstr(SSID): {
 //                          if(!noLock)
 //                              l.lock();
-//                          new_ssid = value;
-//                          updated = true;
-//                          keysToUpdateOnObj.push_back(key);
+//                          updated = new_ssid != value;
+//                          if(updated){
+    //                          new_ssid = value;
+    //                          if(updateObj)
+    //                              keysToUpdateOnObj.push_back(key);
+    //                          }
 //                          break;
 //                      }
 //                      case utils::hashstr(SSID_PASSWORD): {
 //                          if(!noLock)
 //                              l.lock();
-//                          new_ssidPassword = value
-//                          updated = true;
-//                          keysToUpdateOnObj.push_back(key);
+//                          updated = new_ssidPassword != value;
+//                          if(updated){
+//                          new_ssidPassword = value;
+                  //                          if(updateObj)
+                  //                              keysToUpdateOnObj.push_back(key);
+                  //                          }
 //                          break;
 //                      }
-//                      default: {}
+//                      default: {
+        //                    Logger::logw(TAG, "Invalid key %s", key.c_str());
+        //                    return false;
+        //                }
 //                  }
 //                  if(doObjUpdate && !keysToUpdateOnObj.empty()) {
-//                      const bool objUpdated = updateObj(keysToUpdateOnObj, l.owns_lock());
+//                      const bool objUpdated = updateObj(keysToUpdateOnObj, noLock || l.owns_lock());
 //                      if(objUpdated) {
 //                          Logger::logv(TAG, "Updated %s", utils::join(keysToUpdateOnObj, ", ").c_str());
 //                          keysToUpdateOnObj.clear();
@@ -168,7 +200,7 @@ namespace cwifi {
 
   void Get_IPAddress(WiFiEvent_t, WiFiEventInfo_t) {
     Logger::logi(TAG, "[Get_IPAddress] WIFI is connected!");
-    printWifiStatus(*printStream);
+    printWifiStatus(printStream != nullptr ? *printStream : Serial);
 
     for (const auto &onIPAddressCallback : onIPAddressCallbacks)
       onIPAddressCallback();
@@ -177,7 +209,7 @@ namespace cwifi {
   void Wifi_disconnected(WiFiEvent_t, WiFiEventInfo_t info) {
     static int disconnectedCount = 0;
     Logger::logi(TAG, "[Wifi_disconnected] Disconnected from WIFI access point");
-    Logger::logi(TAG, "WiFi lost connection. Reason: %u", info.wifi_sta_disconnected.reason);
+    Logger::logi(TAG, "WiFi lost connection. Reason: %s", wifi_reason_lookup(info.wifi_sta_disconnected.reason));
     for (const auto &onDisconnectedCallback : onDisconnectedCallbacks)
       onDisconnectedCallback();
 
@@ -267,7 +299,7 @@ namespace cwifi {
     WiFi.onEvent(WiFi_Connected, ARDUINO_EVENT_WIFI_STA_CONNECTED);
     WiFi.onEvent(Get_IPAddress, ARDUINO_EVENT_WIFI_STA_GOT_IP);
     WiFi.onEvent(Wifi_disconnected, ARDUINO_EVENT_WIFI_STA_DISCONNECTED);
-    WiFiManager wm(*printStream);
+    WiFiManager wm(printStream != nullptr ? *printStream : Serial);
 
 #if defined(ENABLE_LOGGING) && defined(LOG_LEVEL) && LOG_LEVEL >= ARDUHAL_LOG_LEVEL_DEBUG
     wm.setDebugOutput(true);

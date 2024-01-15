@@ -10,11 +10,15 @@
 #include <Print.h>
 #endif
 
+#include <cstdio>
 #include <vector>
 #include <memory>
 #include <mutex>
+#include <map>
 
-
+#ifndef LOG_LEVEL
+#define LOG_LEVEL LOG_LEVEL_INFO
+#endif
 #ifndef LOG_TAG_MAX_LEN
 #define LOG_TAG_MAX_LEN 5
 #endif
@@ -55,7 +59,8 @@ class Logger {
         inline static std::mutex logMutex = std::mutex();
 
     private:
-        inline static std::unique_ptr<std::vector<std::shared_ptr<Logger>>> loggers = nullptr;
+    inline static std::unique_ptr<std::vector<std::shared_ptr<Logger>>> loggers = nullptr;
+    inline static std::map<std::string, unsigned> tagLevels{};
 
         virtual void v_logv(const char *msg) const { /* do nothing if not enabled */ };
         virtual void v_logd(const char *msg) const { /* do nothing if not enabled */ };
@@ -70,8 +75,10 @@ class Logger {
         Logger(const Logger& obj) = delete; 
             
         static void setDefaultPrintStream(T *_defaultPrintStream) {
+#ifdef ENABLE_LOGGING
             // TODO: implement wrapper class with mutex locking?
-            Logger::defaultPrintStream = _defaultPrintStream;
+            Logger::defaultPrintStream = _defaultPrintStream;       
+#endif
         }
         static T *getDefaultPrintStream() {
             return defaultPrintStream;
@@ -79,6 +86,7 @@ class Logger {
 
         static void addLogger(const std::shared_ptr<Logger> &logger) {
 #ifdef ENABLE_LOGGING
+            std::scoped_lock l(logMutex);
             if(loggers == nullptr)
                 loggers = std::make_unique<std::vector<std::shared_ptr<Logger>>>();
             loggers->push_back(std::move(logger));
@@ -87,13 +95,25 @@ class Logger {
 #endif
         }
 
+        static void setTagLevel(const std::string &tag, const unsigned level) {
+#ifdef ENABLE_LOGGING
+            std::scoped_lock l(logMutex);
+            tagLevels[tag] = level;
+#else
+            (void)tag;
+            (void)level;
+#endif
+        }
+
         template<typename... Args>            
         static void logv(const char* TAG, const char *msg, Args&&... args) {
 #if defined(ENABLE_LOGGING) && defined(LOG_LEVEL) && LOG_LEVEL >= LOG_LEVEL_VERBOSE
+            if(tagLevels.find(TAG) != tagLevels.end() && tagLevels[TAG] < LOG_LEVEL_VERBOSE)
+                return;
             if(loggers == nullptr || loggers->empty())
                 return;
             const std::string tag_msg = std::string("[%-*.*s] ") + msg;
-            auto size = std::snprintf(nullptr, 0, tag_msg.c_str(), LOG_TAG_MAX_LEN, LOG_TAG_MAX_LEN, TAG, std::forward<Args>(args)...);
+            const auto size = std::snprintf(nullptr, 0, tag_msg.c_str(), LOG_TAG_MAX_LEN, LOG_TAG_MAX_LEN, TAG, std::forward<Args>(args)...);
             std::string parsed_msg(size + 1, '\0');
             std::sprintf(&parsed_msg[0], tag_msg.c_str(), LOG_TAG_MAX_LEN, LOG_TAG_MAX_LEN, TAG, std::forward<Args>(args)...);
             std::scoped_lock l(logMutex);
@@ -110,10 +130,12 @@ class Logger {
         template<typename... Args>            
         static void logd(const char* TAG, const char *msg, Args&&... args) {
 #if defined(ENABLE_LOGGING) && defined(LOG_LEVEL) && LOG_LEVEL >= LOG_LEVEL_DEBUG
+            if(tagLevels.find(TAG) != tagLevels.end() && tagLevels[TAG] < LOG_LEVEL_DEBUG)
+                return;
             if(loggers == nullptr || loggers->empty())
                 return;
             const std::string tag_msg = std::string("[%-*.*s] ") + msg;
-            auto size = std::snprintf(nullptr, 0, tag_msg.c_str(), LOG_TAG_MAX_LEN, LOG_TAG_MAX_LEN, TAG, std::forward<Args>(args)...);
+            const auto size = std::snprintf(nullptr, 0, tag_msg.c_str(), LOG_TAG_MAX_LEN, LOG_TAG_MAX_LEN, TAG, std::forward<Args>(args)...);
             std::string parsed_msg(size + 1, '\0');
             std::sprintf(&parsed_msg[0], tag_msg.c_str(), LOG_TAG_MAX_LEN, LOG_TAG_MAX_LEN, TAG, std::forward<Args>(args)...);
             std::scoped_lock l(logMutex);
@@ -130,10 +152,12 @@ class Logger {
         template<typename... Args>            
         static void logi(const char *TAG, const char *msg, Args&&... args) {
 #if defined(ENABLE_LOGGING) && defined(LOG_LEVEL) && LOG_LEVEL >= LOG_LEVEL_INFO
+            if(tagLevels.find(TAG) != tagLevels.end() && tagLevels[TAG] < LOG_LEVEL_INFO)
+                return;
             if(loggers == nullptr || loggers->empty())
                 return;
             const std::string tag_msg = std::string("[%-*.*s] ") + msg;
-            auto size = std::snprintf(nullptr, 0, tag_msg.c_str(), LOG_TAG_MAX_LEN, LOG_TAG_MAX_LEN, TAG, std::forward<Args>(args)...);
+            const auto size = std::snprintf(nullptr, 0, tag_msg.c_str(), LOG_TAG_MAX_LEN, LOG_TAG_MAX_LEN, TAG, std::forward<Args>(args)...);
             std::string parsed_msg(size + 1, '\0');
             std::sprintf(&parsed_msg[0], tag_msg.c_str(), LOG_TAG_MAX_LEN, LOG_TAG_MAX_LEN, TAG, std::forward<Args>(args)...);
             std::scoped_lock l(logMutex);
@@ -150,10 +174,12 @@ class Logger {
         template<typename... Args>            
         static void logw(const char* TAG, const char *msg, Args&&... args) {
 #if defined(ENABLE_LOGGING) && defined(LOG_LEVEL) && LOG_LEVEL >= LOG_LEVEL_WARN
+            if(tagLevels.find(TAG) != tagLevels.end() && tagLevels[TAG] < LOG_LEVEL_WARN)
+                return;
             if(loggers == nullptr || loggers->empty())
                 return;
             const std::string tag_msg = std::string("[%-*.*s] ") + msg;
-            auto size = std::snprintf(nullptr, 0, tag_msg.c_str(), LOG_TAG_MAX_LEN, LOG_TAG_MAX_LEN, TAG, std::forward<Args>(args)...);
+            const auto size = std::snprintf(nullptr, 0, tag_msg.c_str(), LOG_TAG_MAX_LEN, LOG_TAG_MAX_LEN, TAG, std::forward<Args>(args)...);
             std::string parsed_msg(size + 1, '\0');
             std::sprintf(&parsed_msg[0], tag_msg.c_str(), LOG_TAG_MAX_LEN, LOG_TAG_MAX_LEN, TAG, std::forward<Args>(args)...);
             std::scoped_lock l(logMutex);
@@ -170,10 +196,12 @@ class Logger {
         template<typename... Args>            
         static void loge(const char* TAG, const char *msg, Args&&... args) {
 #if defined(ENABLE_LOGGING) && defined(LOG_LEVEL) && LOG_LEVEL >= LOG_LEVEL_ERROR
+            if(tagLevels.find(TAG) != tagLevels.end() && tagLevels[TAG] < LOG_LEVEL_ERROR)
+                return;
             if(loggers == nullptr || loggers->empty())
                 return;
             const std::string tag_msg = std::string("[%-*.*s] ") + msg;
-            auto size = std::snprintf(nullptr, 0, tag_msg.c_str(), LOG_TAG_MAX_LEN, LOG_TAG_MAX_LEN, TAG, std::forward<Args>(args)...);
+            const auto size = std::snprintf(nullptr, 0, tag_msg.c_str(), LOG_TAG_MAX_LEN, LOG_TAG_MAX_LEN, TAG, std::forward<Args>(args)...);
             std::string parsed_msg(size + 1, '\0');
             std::sprintf(&parsed_msg[0], tag_msg.c_str(), LOG_TAG_MAX_LEN, LOG_TAG_MAX_LEN, TAG, std::forward<Args>(args)...);
             std::scoped_lock l(logMutex);

@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+
 #include <thread>
 #include <atomic>
 #include <condition_variable>
@@ -6,7 +7,7 @@
 #include <vector>
 #include <mutex>
 
-#include "../DesktopLogger.h"
+#include "DesktopLogger.h"
 
 #include <utils.h>
 
@@ -88,26 +89,26 @@ TEST(UtilsTests, UtilsConcat) {
     DesktopLogger::logd(TAG, "utils_concat");
 
     // test ints
-    const std::vector<int> v1{1, 2, 3};
+    const std::vector<int> v1{1, 2, 1};
     const std::vector<int> v2{4, 5, 1};
-    const std::vector<int> v3{1, 2, 3, 4, 5, 1};
+    const std::vector<int> v3{1, 2, 1, 4, 5, 1};
     auto v4 = utils::concat(v1, v2, false);
 
-    DesktopLogger::logd(TAG, "v1: [%s]", utils::join(v1, ", ").data());
+    DesktopLogger::logd(TAG, "v1: [%s]", utils::join(v1, std::string(", ")).c_str());
     DesktopLogger::logd(TAG, "v2: [%s]", utils::join(v2, ", ").c_str());
     DesktopLogger::logd(TAG, "v3: [%s]", utils::join(v3, ", ").c_str());
     DesktopLogger::logd(TAG, "v4: [%s]", utils::join(v4, ", ").c_str());
     ASSERT_TRUE(std::equal(v3.begin(), v3.end(), v4.begin())) << "incorrect int concat result";
 
 
-    const std::vector<int> v5{1, 2, 3, 4, 5};
+    const std::vector<int> v5{1, 2, 4, 5};
     auto v6 = utils::concat(v1, v2, true);
 
-    DesktopLogger::logd(TAG, "v1: [%s]", utils::join(v1, ", ").data());
+    DesktopLogger::logd(TAG, "v1: [%s]", utils::join(v1, ", ").c_str());
     DesktopLogger::logd(TAG, "v2: [%s]", utils::join(v2, ", ").c_str());
     DesktopLogger::logd(TAG, "v3: [%s]", utils::join(v3, ", ").c_str());
     DesktopLogger::logd(TAG, "v4: [%s]", utils::join(v4, ", ").c_str());
-    EXPECT_TRUE(std::equal(v5.begin(), v5.end(), v6.begin())) << "incorrect int unique concat result";
+    EXPECT_TRUE(std::equal(v6.begin(), v6.end(), v5.begin())) << "incorrect int unique concat result";
 
     // test std::string
     std::vector<std::string> v7{"1", "2", "3"};

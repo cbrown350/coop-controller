@@ -8,7 +8,20 @@
 #ifdef CONFIG_MBEDTLS_CERTIFICATE_BUNDLE
 #include <esp_http_client.h>
 #include <esp_https_ota.h>
-#include <esp_crt_bundle.h>
+
+#include <esp_crt_bundle.h> // conflicting library, so we need to use weak symbols
+#pragma weak arduino_esp_crt_bundle_set
+extern void arduino_esp_crt_bundle_set(const uint8_t *x509_bundle);
+#pragma weak arduino_esp_crt_bundle_set
+void (*arduino_esp_crt_bundle_setFunc)(const uint8_t *) = arduino_esp_crt_bundle_set;
+#pragma weak arduino_esp_crt_bundle_attach
+extern esp_err_t arduino_esp_crt_bundle_attach(void *conf);
+#pragma weak arduino_esp_crt_bundle_attach
+esp_err_t (*arduino_esp_crt_bundle_attachFunc)(void*) = arduino_esp_crt_bundle_attach;
+#pragma weak esp_crt_bundle_attach
+extern esp_err_t esp_crt_bundle_attach(void *conf);
+#pragma weak esp_crt_bundle_attach
+esp_err_t (*esp_crt_bundle_attachFunc)(void*) = esp_crt_bundle_attach;
 #endif // CONFIG_MBEDTLS_CERTIFICATE_BUNDLE
 
 #include <Logger.h>
@@ -25,8 +38,6 @@ extern const uint8_t x509_crt_imported_bundle_bin_start[] asm("_binary_x509_crt_
 #endif // CONFIG_MBEDTLS_CERTIFICATE_BUNDLE
 
 namespace ota_update {
-
-    inline static constexpr const char * TAG{"otaup"};
 
     static bool _restartOnUpdate = true;
 
@@ -58,15 +69,29 @@ namespace ota_update {
 /* esp_http_client_config_t doesn't work if fully initialized, done per ESP-IDF docs */
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wmissing-field-initializers"
-        arduino_esp_crt_bundle_set(x509_crt_imported_bundle_bin_start);
-        esp_http_client_config_t config = {
-            .url = url,
-            // .crt_bundle_attach = esp_crt_bundle_attach,
-            .crt_bundle_attach = arduino_esp_crt_bundle_attach,
-        };
+        // arduino_esp_crt_bundle_set(x509_crt_imported_bundle_bin_start);
+        if (arduino_esp_crt_bundle_setFunc) 
+            (*arduino_esp_crt_bundle_setFunc)(x509_crt_imported_bundle_bin_start);
+        if (arduino_esp_crt_bundle_attachFunc) {
+            esp_http_client_config_t config = {
+                .url = url,
+            //    .crt_bundle_attach = esp_crt_bundle_attach,
+                .crt_bundle_attach = arduino_esp_crt_bundle_attach,
+            };
+            Logger::logi(TAG, "Starting OTA firmware update from URL: %s...", url);
+            return esp_https_ota(&config);
+        } else {
+            esp_http_client_config_t config = {
+                .url = url,
+               .crt_bundle_attach = esp_crt_bundle_attach,
+                // .crt_bundle_attach = arduino_esp_crt_bundle_attach,
+            };
+            Logger::logi(TAG, "Starting OTA firmware update from URL: %s...", url);
+            return esp_https_ota(&config);
+        }
 #pragma GCC diagnostic pop
-        Logger::logi(TAG, "Starting OTA firmware update from URL: %s...", url);
-        return esp_https_ota(&config);
+        // Logger::logi(TAG, "Starting OTA firmware update from URL: %s...", url);
+        // return esp_https_ota(&config);
 #else
         return ESP_FAIL;
 #endif // CONFIG_MBEDTLS_CERTIFICATE_BUNDLE
@@ -132,6 +157,7 @@ namespace ota_update {
                               serverOTALoopMutex, serverOTALoopCond, serverOTALoopThreadStop));
 
         Logger::logv(TAG, "[serverOtaHandle] terminating...");
+
         vTaskDelete( serverOTALoopThreadHandle );
     }
 #endif // SERVER_OTA_UPDATE_URL  
@@ -197,7 +223,7 @@ namespace ota_update {
             // using low-level calls for more stack instead of std::thread
             serverOTALoopThread = xTaskCreate(serverOtaHandle,          /* Task function. */
                                               "serverOtaHandle",        /* String with name of task. */
-                                              10000,            /* Stack size in bytes. */
+                                              8000,            /* Stack size in bytes. */
                                               nullptr,             /* Parameter passed as input of the task */
                                               1,                /* Priority of the task. */
                                               &serverOTALoopThreadHandle);

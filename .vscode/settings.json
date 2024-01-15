@@ -74,7 +74,9 @@
         "concepts": "cpp",
         "numbers": "cpp",
         "semaphore": "cpp",
-        "stop_token": "cpp"
+        "stop_token": "cpp",
+        "ranges": "cpp",
+        "span": "cpp"
     },
     // "terminal.integrated.sendKeybindingsToShell": true,
 
@@ -135,4 +137,9 @@
     "gtest-adapter.debugConfig": [
         "PIO Debug"
     ],
+    "gcovViewer.highlightMissedLines": true,
+    "gcovViewer.buildDirectories": [
+        
+    ],
+    "sonarlint.pathToCompileCommands": "${workspaceFolder}\\.pio\\build\\esp32-release\\compile_commands.json",
 }

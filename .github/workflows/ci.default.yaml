@@ -1,0 +1,40 @@
+name: PlatformIO CI
+
+on: [push]
+
+jobs:
+  build:
+    if: ${{ 1 != 1 }} # disable
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        envs: [desktop, esp32-debug, esp32-release]
+        checks: [desktop, esp32-debug, esp32-release]
+        tests: [desktop/*] # [desktop/*, embedded/debug/*]
+
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/pip
+            ~/.platformio/.cache
+          key: ${{ runner.os }}-pio
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+      - name: Install PlatformIO Core
+        run: pip install --upgrade platformio
+
+      - name: Build PlatformIO
+        run: pio run -e ${{ matrix.envs }}
+
+      - name: Check PlatformIO
+        run: pio check -e ${{ matrix.checks }}
+
+      - name: Test PlatformIO
+#          run: pio ci --board=esp32dev
+        run: pio test -e ${{ matrix.envs }} -f ${{ matrix.tests }} -i --
+#          env:
+#            PLATFORMIO_CI_SRC: ${{ matrix.tests }}
+#            PLATFORMIO_BUILD_FLAGS: -D SPECIFIC_MACRO -I/extra/inc

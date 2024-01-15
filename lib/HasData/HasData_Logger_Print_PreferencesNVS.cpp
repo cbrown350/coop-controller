@@ -15,25 +15,30 @@
 template<>
 bool HasData<>::loadNvsData() {
     const auto nvsNamespace = getNvsNamespace();
-    Logger::logv(TAG, "[loadNVSData] for namespace %s", nvsNamespace.c_str());
+    Logger::logv(getTag(), "[loadNVSData] for namespace %s", nvsNamespace.c_str());
 
     if(getNvsKeys().empty()) {
-        Logger::logw(TAG, "No NVS IDs defined for namespace %s", nvsNamespace.c_str());
+        Logger::logw(getTag(), "No NVS IDs defined for namespace %s", nvsNamespace.c_str());
         return false;
     }
     Preferences nvs;
     std::scoped_lock l{nvsDataMutex, _dataMutex};
 
     if(!nvs.begin(nvsNamespace.c_str(), true)) {
+        // Try to create namespace
         if(!nvs.begin(nvsNamespace.c_str(), false)) {
-            Logger::loge(TAG, "Failed to open NVS (rw) for init namespace %s", nvsNamespace.c_str());
+            Logger::loge(getTag(), "Failed to open NVS (rw) for init namespace %s", nvsNamespace.c_str());
             return false;
         }
         nvs.end();
+        // Try to open namespace again
         if(!nvs.begin(nvsNamespace.c_str(), true)) {
-            Logger::loge(TAG, "Failed to open NVS (ro) after successful init namespace %s", nvsNamespace.c_str());
+            Logger::loge(getTag(), "Failed to open NVS (ro) after successful init namespace %s", nvsNamespace.c_str());
             return false;
         }
+        // namespace was just created, so no need to load data
+        nvs.end();
+        return true;
     }
 
 //    bool keysUpdated = false;
@@ -45,9 +50,9 @@ bool HasData<>::loadNvsData() {
             const bool wasUpdated = setWithOptLockAndUpdate(key, value, true, false);
 //            keysUpdated |= wasUpdated;
             if(!wasUpdated)
-                Logger::loge(TAG, "Failed to load %s = %s", key.c_str(), value.c_str());
+                Logger::loge(getTag(), "Failed to load %s = %s", key.c_str(), value.c_str());
             else
-                Logger::logv(TAG, "Loaded %s = %s", key.c_str(), value.c_str());
+                Logger::logv(getTag(), "Loaded %s = %s", key.c_str(), value.c_str());
         }
     }
     nvs.end();
@@ -56,7 +61,7 @@ bool HasData<>::loadNvsData() {
     // if(keysUpdated) 
     //     updatedObj = updateObj(getNvsKeys(), true);
     // if(!updatedObj)
-    //     Logger::loge(TAG, "Failed to update object after loading NVS data");
+    //     Logger::loge(getTag(), "Failed to update object after loading NVS data");
 
     // return updatedObj;
     return true;
@@ -65,15 +70,15 @@ bool HasData<>::loadNvsData() {
 template<>
 bool HasData<>::saveNvsData(const std::vector<std::string> &keys, const bool _dataAlreadyLocked) const {
     const auto nvsNamespace = getNvsNamespace();
-    Logger::logv(TAG, "[saveNVSData] for namespace %s", nvsNamespace.c_str());
+    Logger::logv(getTag(), "[saveNVSData] for namespace %s", nvsNamespace.c_str());
 
     const auto &nvsKeys = getNvsKeys();
     if(nvsKeys.empty()) {
-        Logger::logw(TAG, "No NVS IDs defined for namespace %s", nvsNamespace.c_str());
+        Logger::logw(getTag(), "No NVS IDs defined for namespace %s", nvsNamespace.c_str());
         return false;
     }
     if(keys.empty()) {
-        Logger::logw(TAG, "No keys sent to save");
+        Logger::logw(getTag(), "No keys sent to save");
         return false;
     }
 
@@ -86,7 +91,7 @@ bool HasData<>::saveNvsData(const std::vector<std::string> &keys, const bool _da
         nvsLock.lock();
 
     if(!nvs.begin(nvsNamespace.c_str(), false)) {
-        Logger::loge(TAG, "Failed to open (rw) NVS namespace %s", nvsNamespace.c_str());
+        Logger::loge(getTag(), "Failed to open (rw) NVS namespace %s", nvsNamespace.c_str());
         return false;
     }
 
@@ -95,18 +100,18 @@ bool HasData<>::saveNvsData(const std::vector<std::string> &keys, const bool _da
         if(std::find(readOnlyKeys.begin(), readOnlyKeys.end(), key) == readOnlyKeys.end() &&
                   std::find(nvsKeys.begin(), nvsKeys.end(), key) != nvsKeys.end()) {
             const auto value = getWithOptLock(key, true);
-            if(std::string(nvs.getString(key.c_str(), EMPTY_VALUE).c_str()) == value) {
-                Logger::logv(TAG, "Skipping %s = %s, already saved", key.c_str(), value.c_str());
-                continue;
-            }
+//            if(std::string(nvs.getString(key.c_str(), EMPTY_VALUE).c_str()) == value) {
+//                Logger::logv(getTag(), "Skipping %s = %s, already saved", key.c_str(), value.c_str());
+//                continue;
+//            }
             if(value == EMPTY_VALUE) {
                 nvs.remove(key.c_str());
             } else if(nvs.putString(key.c_str(), value.c_str()) != value.length()) {
-                Logger::loge(TAG, "Failed to save %s = %s", key.c_str(), value.c_str());
+                Logger::loge(getTag(), "Failed to save %s = %s", key.c_str(), value.c_str());
                 nvs.end();
                 return false;
             }
-            Logger::logv(TAG, "Saved %s = %s", key.c_str(), value.c_str());
+            Logger::logv(getTag(), "Saved %s = %s", key.c_str(), value.c_str());
         }
     }
 
@@ -117,18 +122,18 @@ bool HasData<>::saveNvsData(const std::vector<std::string> &keys, const bool _da
 template<>
 bool HasData<>::deleteNvsData() const {
     const auto nvsNamespace = getNvsNamespace();
-    Logger::logv(TAG, "[deleteNVSData] for namespace %s", nvsNamespace.c_str());
+    Logger::logv(getTag(), "[deleteNVSData] for namespace %s", nvsNamespace.c_str());
 
     Preferences nvs;
     std::scoped_lock l{nvsDataMutex};
 
     if(!nvs.begin(nvsNamespace.c_str(), false)) {
-        Logger::loge(TAG, "Failed to open (rw) NVS namespace %s", nvsNamespace.c_str());
+        Logger::loge(getTag(), "Failed to open (rw) NVS namespace %s", nvsNamespace.c_str());
         return false;
     }
 
     if(!nvs.clear()) {
-        Logger::loge(TAG, "Failed to clear NVS namespace %s", nvsNamespace.c_str());
+        Logger::loge(getTag(), "Failed to clear NVS namespace %s", nvsNamespace.c_str());
         nvs.end();
         return false;
     }
@@ -140,7 +145,7 @@ bool HasData<>::deleteNvsData() const {
 
 template<>
 std::map<std::string, std::string> HasData<>::getData() const {
-    Logger::logv(TAG, "[getData] for instanceID %s", instanceID.c_str());
+    Logger::logv(getTag(), "[getData] for instanceID %s", instanceID.c_str());
     const auto keys = getKeys();
     std::map<std::string, std::string> data;
     std::scoped_lock l{_dataMutex};
@@ -149,10 +154,10 @@ std::map<std::string, std::string> HasData<>::getData() const {
     }
     return data;
 }
-#include <utils.h>
+
 template<>
 bool HasData<>::setData(const std::map<std::string, std::string> &newData) {
-    Logger::logv(TAG, "[setData] for instanceID %s", instanceID.c_str());
+    Logger::logv(getTag(), "[setData] for instanceID %s", instanceID.c_str());
     std::vector<std::string> changedKeys;
     const auto &readOnlyKeys = getReadOnlyKeys();
     std::scoped_lock l{_dataMutex};
@@ -163,7 +168,7 @@ bool HasData<>::setData(const std::map<std::string, std::string> &newData) {
             if(setWithOptLockAndUpdate(key, value, true, false)) {
                 changedKeys.emplace_back(key);
             } else {
-                Logger::loge(TAG, "Failed to save %s = %s", key.c_str(), value.c_str());
+                Logger::loge(getTag(), "Failed to save %s = %s", key.c_str(), value.c_str());
             }
         }
     }

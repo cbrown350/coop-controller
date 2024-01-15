@@ -1,7 +1,7 @@
 
 #include <gtest/gtest.h>
 
-#include "../DesktopLoggerFixture.h"
+#include "DesktopLoggerFixture.h"
 
 #include <utils.h>
 
@@ -66,22 +66,31 @@ public:
 
         if (key == "test_key1") {
             Logger::logd(TAG, "setWithOptLockAndUpdate 'test_key1': '%s'", value.c_str());
-            test_key1 = value;
-            updated = true;
-            keysToUpdateOnObj.push_back(key);
+            updated = test_key1 != value;
+            if(updated) {
+                test_key1 = value;
+                if (doObjUpdate)
+                    keysToUpdateOnObj.push_back(key);
+            }
         }
         if (key == "test_key2") {
             Logger::logd(TAG, "setWithOptLockAndUpdate 'test_key2': '%s'", value.c_str());
             throw std::runtime_error("test exception, test_key2 is read-only");
-            test_key2 = value;
-            updated = true;
-            keysToUpdateOnObj.push_back(key);
+            updated = test_key2 != value;
+            if(updated) {
+                test_key2 = value;
+                if (doObjUpdate)
+                    keysToUpdateOnObj.push_back(key);
+            }
         }
         if (key == "test_key3") {
             Logger::logd(TAG, "setWithOptLockAndUpdate 'test_key3': '%s'", value.c_str());
-            test_key3 = value;
-            updated = true;
-            keysToUpdateOnObj.push_back(key);
+            updated = test_key3 != value;
+            if(updated) {
+                test_key3 = value;
+                if (doObjUpdate)
+                    keysToUpdateOnObj.push_back(key);
+            }
         }
         if(doObjUpdate && !keysToUpdateOnObj.empty()) {
             const bool objUpdated = updateObj(keysToUpdateOnObj, noLock);

@@ -10,8 +10,8 @@ Based on the ESP32 controller (ESP32-DevkitC)
     * [ ] Via web page
 * [x] WiFi Config
     * [ ] Reconfig via web page
-* [ ] Set time from NTP server
-    * [ ] Get timezone and DST from WiFi setup
+* [x] Set time from NTP server
+    * [x] Get timezone and DST from WiFi setup
     * [ ] Get timezone and DST from web page
     * [ ] Infer timezone from?
 * [ ] Sunrise/Sunset Trigger
@@ -101,10 +101,16 @@ Future ADC Functions (not enough channels now)
 5. If using devcontainers on Windows, you must:
     1. Install a Linux distro for WSL
     2. Install Docker Desktop
-    3. Install USBIPD (https://github.com/dorssel/usbipd-win/releases) in Windows
-    4. If using Ubuntu (you'll have to find comparable usbip install for other distros):
-        1. sudo apt install linux-tools-5.4.0-77-generic hwdata
-        2. sudo update-alternatives --install /usr/local/bin/usbip usbip /usr/lib/linux-tools/5.4.0-77-generic/usbip 20
-    5. Setup any USB Vendor/Product IDs for devices you're using in the container in `.devcontainer/container_init.sh` and `.devcontainer/host_init.cmd` (esp-prog and the ESP32 IDs are already set there)
+    3. Install USBIPD (https://github.com/dorssel/usbipd-win/releases) in Windows (instructions may change and updates can be viewed at: https://learn.microsoft.com/en-us/windows/wsl/connect-usb#attach-a-usb-device)
+    4. Find your Linux kernel version (uname -r) -> kernel\_version
+    5. If using Ubuntu (you'll have to find comparable usbip install for other distros):
+        1. sudo apt install libusb-dev linux-tools-generic hwdata (may have to find a specific version closest to your kernel version, e.g. linux-tools-${kernel\_version}-generic)
+        2. sudo update-alternatives --install /usr/local/bin/usbip usbip /usr/lib/linux-tools/${kernel\_version}-generic/usbip 20 (may have to use specific version using your kernel or installed version, e.g. linux-tools/${kernel\_version}-generic)
+    6. Setup any USB Vendor/Product IDs for devices you're using in the container in `.devcontainer/container_init.sh` and `.devcontainer/host_init.cmd` (esp-prog and the ESP32 IDs are already set there)
+    7. You may need to restart the container after the first time you run it to get the USB devices to show up
+    8. USB ports may need to be specified in the platformio.ini file for upload\_port, monitor\_port and JTAG tool
 6. See the schematic and other information under the `docs` folder
 7. To create an OTA update package (json manifest and firmware binaries), build the project and build the file system and it will appear in `.pio/build/ota`
+8. JTAG (esp-prog) often requires holding down the boot button on the ESP32 board while uploading or debugging
+9. To debug a test you must build it before starting a debug session (e.g. `pio test -e esp32-debug --without-uploading --without-testing`) and use the skip Pre-Debug option to avoid building again
+10. If you just want to use a serial monitor directly on the command line, tio is installed in the devcontainer and can be used with `tio -b 115200 /dev/ttyUSB0` (or whatever port you're using)

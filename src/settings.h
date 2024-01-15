@@ -120,6 +120,7 @@
 #define LOG_TAG_MAX_LEN 5
 #endif
 
+
 #if defined(ARDUINO)
 #include <Arduino.h>
 

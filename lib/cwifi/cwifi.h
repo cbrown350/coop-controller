@@ -14,6 +14,8 @@
 namespace cwifi {
     using Logger = Logger<>;
 
+    inline static constexpr const char * const TAG{"cwifi"};
+
     /*
      * Data keys:
      *   ssid

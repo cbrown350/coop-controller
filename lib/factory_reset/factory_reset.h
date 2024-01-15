@@ -7,6 +7,8 @@
 namespace factory_reset {
     using Logger = Logger<>;
 
+    inline static constexpr const char * const TAG{"ftrst"};
+
     void init();
     void addOnFactoryResetCallback(const std::function<void()> &onFactoryResetCallback);
 }

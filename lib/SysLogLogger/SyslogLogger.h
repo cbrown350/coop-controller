@@ -10,6 +10,8 @@
 
 class SyslogLogger : public Logger<> {
     public:
+        inline static constexpr const char * const TAG{"syslg"};
+
         ~SyslogLogger() override = default;
         explicit SyslogLogger(const char* server = SYSLOG_SERVER, uint16_t port = SYSLOG_PORT, uint8_t protocol = SYSLOG_PROTO_BSD)
 #if defined(SYSLOG_SERVER) && defined(ENABLE_LOGGING)       
@@ -21,7 +23,7 @@ class SyslogLogger : public Logger<> {
             syslog.deviceHostname(HOSTNAME);
 //            syslog.appName(PRODUCT_NAME);
             syslog.defaultPriority(LOG_KERN);
-            Logger::logi("syslog", "Sending SysLogs to %s:%d", SYSLOG_SERVER, SYSLOG_PORT);
+            Logger::logi(TAG, "Sending SysLogs to %s:%d", SYSLOG_SERVER, SYSLOG_PORT);
         };
 
     private:
@@ -39,12 +41,16 @@ class SyslogLogger : public Logger<> {
     //   *LOG_DEBUG 7 - debug-level messages */
     // only * implemented
 
+        inline static unsigned long lastPrintedNotConnected{0};
         static bool isConnected() {
             if ((WiFiGenericClass::getMode() == WIFI_STA || WiFiGenericClass::getMode() == WIFI_AP_STA)
                     && WiFiSTAClass::status() == WL_CONNECTED)
                     return true;
-            // TODO: store up to so many messages and relay them when connected?
-            getDefaultPrintStream()->println("[syslog] Syslog not connected");
+            if(millis() - lastPrintedNotConnected >= 30000) {
+                // TODO: store up to so many messages and relay them when connected?
+                getDefaultPrintStream()->printf("[%s] Syslog not connected\n", TAG);
+                lastPrintedNotConnected = millis();
+            }
             return false;
         }
         

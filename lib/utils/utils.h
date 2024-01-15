@@ -11,9 +11,11 @@
 #include <vector>
 #include <map>
 #include <algorithm>
+// #include <ranges>
+
 
 namespace utils {
-    inline static constexpr const char * TAG{"utils"};
+    inline static constexpr const char * const TAG{"utils"};
 
     template<class Duration>
     [[nodiscard]] bool inline wait_for(Duration duration, std::mutex &m, std::condition_variable &c, const bool &stop) {
@@ -29,7 +31,7 @@ namespace utils {
         auto size = static_cast<size_t>( size_s );
         std::unique_ptr<char[]> buf( new char[ size ] );
         std::snprintf( buf.get(), size, format.c_str(), args ... );
-        return {buf.get(), buf.get() + size - 1}; // We don't want the '\0' inside
+        return {buf.get(), &buf[size - 1]}; // We don't want the '\0' inside
     }
 
     // https://stackoverflow.com/questions/65195841/hash-function-to-switch-on-a-string
@@ -39,21 +41,16 @@ namespace utils {
 
     [[nodiscard]] std::vector<std::string> split(std::string_view view, char i);
 
-    template<typename T>
-    [[nodiscard]] inline std::string join(const std::vector<T> &vector, const std::string &separator) {
+    template<typename C> //,
+            // typename = std::enable_if_t<std::ranges::common_range<C>>>
+    [[nodiscard]] inline std::string join(const C &container, const std::string &separator) {
         std::string result;
-        for(auto it = vector.begin(); it != vector.end(); ++it) {
-            result += std::to_string(*it);
-            if(it != vector.end() - 1)
-                result += separator;
-        }
-        return result;
-    }
-    [[nodiscard]] inline std::string join(const std::vector<std::string> &vector, const std::string &separator) {
-        std::string result;
-        for(auto it = vector.begin(); it != vector.end(); ++it) {
-            result += *it;
-            if(it != vector.end() - 1)
+        for(auto it = container.begin(); it != container.end(); ++it) {
+            if constexpr (std::is_same<typename C::value_type, std::string>::value)
+                result += *it;
+            else
+                result += std::to_string(*it);
+            if(it != container.end() - 1)
                 result += separator;
         }
         return result;

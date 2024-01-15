@@ -5,9 +5,9 @@ if not exist .env copy NUL .env
 REM Bring USB devices into wsl on Windows - add USB vendor:product IDs here and in container_init.sh
 REM The first time these run it will need admin privileges to bind 
 REM esp32 uart
-start cmd /C c:\\Progra~1\\usbipd-win\\usbipd.exe wsl attach -ai 10c4:ea60 || ver>nul
+start cmd /C c:\\Progra~1\\usbipd-win\\usbipd.exe attach -wai 10c4:ea60 || ver>nul
 REM esp-prog
-start cmd /C c:\\Progra~1\\usbipd-win\\usbipd.exe wsl attach -ai 0403:6010 || ver>nul
+start cmd /C c:\\Progra~1\\usbipd-win\\usbipd.exe attach -wai 0403:6010 || ver>nul
 
 REM Start and stop usbipd.exe in the background with automatic attach
 REM start /B c:\\Progra~1\\usbipd-win\\usbipd.exe wsl attach -ai 10c4:ea60
@@ -26,4 +26,5 @@ setlocal
 SET DEV_OTA_HOST_PORT=3500
 FOR /F "tokens=*" %%i in ('type .devcontainer\\.env') do @SET %%i
 netsh advfirewall firewall show rule name="udp-%DEV_OTA_HOST_PORT%-esp-ota" || powershell "start .devcontainer\\win_firewall_setup.cmd -v runAs"
+
 endlocal

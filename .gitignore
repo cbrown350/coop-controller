@@ -63,7 +63,7 @@ managed_components
 
 dependencies.lock
 certs
-scratch.txt
+scratch.*
 *.old
 
 ### JetBrains ###

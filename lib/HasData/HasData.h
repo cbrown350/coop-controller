@@ -4,6 +4,7 @@
 #include <mutex>
 #include <map>
 #include <string>
+#include <algorithm>
 #include <utility>
 #include <Logger.h>
 
@@ -32,8 +33,6 @@ class HasData {
     public:
         using Logger = L;
 
-        inline static constexpr const char * TAG{"hsdta"};
-
         // `instanceID` must be shorter than 15 characters if used as NVS namespace
         const std::string instanceID;
         // Emtpy value ("-0-") to let you know that a value is not set, different from an empty string
@@ -59,10 +58,12 @@ class HasData {
         [[nodiscard]] virtual std::string get(const std::string &key) const { return getWithOptLock(key, false); }
 
         /* Sets the keys/values in newData in based on implemented `setWithOptLockAndUpdate()` and then runs `updateObj()` if changed
-         *   which may intern call `saveNvsData()` in `updateObj()` (by default) */
+         *   which may intern call `saveNvsData()` in `updateObj()` (by default).
+         *   Only returns true if the values were changed and the update was successful. */
         [[nodiscard]] virtual bool setData(const std::map<std::string, std::string> &newData);
         /* Sets new value for key based on implemented `setWithOptLockAndUpdate()` and then runs `updateObj()` if changed.
-         *   May or may not call `saveNvsData()` in `updateObj()` depending on how it's implemented by the concrete class */
+         *   May or may not call `saveNvsData()` in `updateObj()` depending on how it's implemented by the concrete class.
+         *   Only returns true if the values were changed and the update was successful. */
         [[nodiscard]] virtual bool set(const std::string &key, const std::string &value) { return setWithOptLockAndUpdate(key, value, false, true); }
 
 
@@ -72,7 +73,7 @@ class HasData {
         [[nodiscard]] virtual std::string getNvsNamespace() const {
             // truncate `instanceID` to 15 characters (14 plus null terminator) if too long to use as NVS namespace
             if(instanceID.length() > 14) {
-                Logger::logw(TAG, "instanceID %s is longer than 15 characters, truncating", instanceID.c_str());
+                Logger::logw(getTag(), "instanceID %s is longer than 15 characters, truncating", instanceID.c_str());
                 return instanceID.substr(0, 14);
             }
             return instanceID;
@@ -86,6 +87,8 @@ class HasData {
 
         // Keys used to get/set data
         [[nodiscard]] virtual std::vector<std::string> getKeys() const = 0;
+
+        [[nodiscard]] virtual const char * getTag() const = 0;
 
     protected:
         inline static std::mutex nvsDataMutex;
@@ -103,9 +106,67 @@ class HasData {
              By default  `saveNvsData()` will be called to store data to NVS unless reimplemented */
         [[nodiscard]] virtual bool updateObj(const std::vector<std::string> &keys, const bool _dataAlreadyLocked) {
             if(!keys.empty()) {
-                return saveNvsData(keys, _dataAlreadyLocked);
+                // check at least one key in keys is in getNvsKeys()
+                const auto nvsKeys = getNvsKeys();
+                for(const auto &key : keys) {
+                    if(std::find(nvsKeys.begin(), nvsKeys.end(), key) != nvsKeys.end())
+                        return saveNvsData(keys, _dataAlreadyLocked);
+                }
             }
             return true;
+        }
+
+        /* Helper method to generically get a string value from a map of key/T value ptr pairs, returns HasData::EMPTY_VALUE if key not found.
+         *   `_dataMutex` may be locked already when calling this method if `noLock` is true. */
+        template<class T=std::string>
+        [[nodiscard]] T getStringDataHelper(const std::map<const std::string, const T&> &keyVarPairs,
+                                            const std::string &key, const bool noLock, const T& defaultVal = HasData::EMPTY_VALUE) const {
+            if(keyVarPairs.find(key) == keyVarPairs.end()) {
+                Logger::logw(getTag(), "Invalid key '%s', not found", key.c_str());
+                return defaultVal;
+            }
+
+            std::unique_lock l{_dataMutex, std::defer_lock};
+            if(!noLock)
+                l.lock();
+            return keyVarPairs.at(key);
+        }
+
+//#if defined(ARDUINO)
+//        /* Helper method to generically set string value from a map of key/String value ptr pairs, returns empty string if value not changed.
+//         *   `_dataMutex` may be locked already when calling this method if `noLock` is true. */
+//        // <overloads>
+//        [[nodiscard]] std::string getStringDataHelper(const std::map<const std::string, const String&> &keyVarPairs,
+//                                                      const std::string &key, const bool noLock) const {
+//            return getStringDataHelper<String>(keyVarPairs, key, noLock, String{HasData::EMPTY_VALUE}).c_str();
+//        }
+//#endif
+
+        /* Helper method to generically set string value from a map of key/value ptr pairs, returns empty string if value not changed.
+         *   `_dataMutex` may be locked already when calling this method if `noLock` is true. */
+        template<class T=std::string>
+        [[nodiscard]] std::string setStringDataHelper(const std::map<const std::string, T&> &keyVarPairs,
+                                                     const std::string &key, const T &value, const bool noLock) {
+            const auto _readOnlyKeys = getReadOnlyKeys();
+            if(std::find(_readOnlyKeys.begin(), _readOnlyKeys.end(), key) != _readOnlyKeys.end()) {
+                Logger::logw(getTag(), "Key '%s' is read-only", key.c_str());
+                return "";
+            }
+
+            if(keyVarPairs.find(key) == keyVarPairs.end()) {
+                Logger::logw(getTag(), "Invalid key '%s', not found", key.c_str());
+                return "";
+            }
+
+            std::unique_lock l{_dataMutex, std::defer_lock};
+            if(!noLock)
+                l.lock();
+            T &var = keyVarPairs.at(key);
+            if(var != value) {
+                var = value;
+                return key;
+            }
+            return "";
         }
 
 };

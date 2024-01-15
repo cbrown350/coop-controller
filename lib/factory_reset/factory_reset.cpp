@@ -12,8 +12,6 @@ namespace factory_reset {
   using std::function;
   using std::vector;
 
-  inline static constexpr const char * TAG{"ftrst"};
-    
   bool factory_reset = false;
   std::mutex addResetCallbackMutex;
   vector<function<void()>> onFactoryResetCallbacks = {};
@@ -49,8 +47,6 @@ namespace factory_reset {
     Logger::logi(TAG, "Setting up factory reset on pin %d", FACTORY_RESET_BUTTON_IN_B);
     pinMode(FACTORY_RESET_BUTTON_IN_B, INPUT_PULLUP);
     attachInterrupt(digitalPinToInterrupt(FACTORY_RESET_BUTTON_IN_B), factoryResetIsr, CHANGE);
-
-    interrupts(); // ignore error, this is a macro
 
     thread t(factoryResetLoop);
     t.detach(); //NOSONAR - won't fix, intended to run indefinitely

@@ -20,10 +20,16 @@
 #include <any>
 
 
+#ifdef DEFAULT_MQTT_SERVER
+#define DEFAULT_MQTT_SERVER_DEFAULT DEFAULT_MQTT_SERVER
+#else
+#define DEFAULT_MQTT_SERVER_DEFAULT ""
+#endif
+
 class MQTTController : public HasData<>,
                         public cwifi::ConfigWithWiFi {
     public:
-        inline static constexpr const char * TAG{"mqtt"};
+        inline static constexpr const char * const TAG{"mqtt"};
 
         // Data keys
         inline static constexpr const char * const MQTT_SERVER = "mqtt_server";
@@ -31,18 +37,26 @@ class MQTTController : public HasData<>,
         inline static constexpr const char * const MQTT_USER = "mqtt_user";
         inline static constexpr const char * const MQTT_PASSWORD = "mqtt_password";
 
-        inline static const std::vector<std::string> nvsDataKeys = { MQTT_SERVER, MQTT_PORT, MQTT_USER, MQTT_PASSWORD };
-        inline static const std::vector<std::string> readOnlyKeys{};
-        inline static const std::vector<std::string> keys = utils::concat(readOnlyKeys, nvsDataKeys, true);
-
         explicit MQTTController(const std::string &instanceID, std::string topicPrefix = MQTT_TOPIC_PREFIX) :
                             HasData(instanceID),
                             topicPrefix(std::move(topicPrefix)) {
             static int controllerIDCount{0};
             controllerID = controllerIDCount++;
+
+            // Required c-string copies for WiFiManagerParameter since it doesn't seem to copy in the c-strings
+            strcpy(mqtt_server_param_id, getValueWithID(MQTT_SERVER).c_str());
+            strcpy(mqtt_server_param_label, getValueWithID("MQTT Server", true).c_str());
+            strcpy(mqtt_port_param_id, getValueWithID(MQTT_PORT).c_str());
+            strcpy(mqtt_port_param_label, getValueWithID("MQTT Port", true).c_str());
+            strcpy(mqtt_user_param_id, getValueWithID(MQTT_USER).c_str());
+            strcpy(mqtt_user_param_label, getValueWithID("MQTT User", true).c_str());
+            strcpy(mqtt_password_param_id, getValueWithID(MQTT_PASSWORD).c_str());
+            strcpy(mqtt_password_param_label, getValueWithID("MQTT Password", true).c_str());
         }
+
         ~MQTTController() override;
 
+        [[nodiscard]] const char * getTag() const override { return TAG; }
         void init();
         void startLoop();
         void stopLoop();
@@ -75,6 +89,10 @@ class MQTTController : public HasData<>,
     private:
         int controllerID;
 
+        inline static const std::vector<std::string> nvsDataKeys = {MQTT_SERVER, MQTT_PORT, MQTT_USER, MQTT_PASSWORD};
+        inline static const std::vector<std::string> readOnlyKeys{};
+        inline static const std::vector<std::string> keys = utils::concat(readOnlyKeys, nvsDataKeys, true);
+
         WiFiClient *net = nullptr;
         MQTTClient client{MQTT_MAX_PACKET};
         char clientID[MAX_HOSTNAME_LENGTH+3] = {0}; // client ID length is limited by the MQTT spec
@@ -89,38 +107,43 @@ class MQTTController : public HasData<>,
         std::thread *loopThread = nullptr;
         bool loopThreadStop = true;
 
-        const char * getValueWithID(const char * name, bool addSpace = false) const {
-            if(controllerID == 0) {
-                return name;
-            }
-            if (addSpace) {
-                return (std::string(name) + " " + std::to_string(controllerID)).c_str();
-            } else {
-                return (name + std::to_string(controllerID)).c_str();
-            }
+        std::string getValueWithID(const char * name, bool addSpace = false) const {
+            std::string value = name;
+            if(controllerID == 0)
+                return value;
+            if (addSpace)
+                value.append(" ");
+            value.append(std::to_string(controllerID));
+            return value;
         }
 
-#ifdef DEFAULT_MQTT_SERVER
-#define DEFAULT_MQTT_SERVER_DEFAULT DEFAULT_MQTT_SERVER
-#else
-#define DEFAULT_MQTT_SERVER_DEFAULT ""
-#endif
-        WiFiManagerParameter mqtt_server_param{getValueWithID(MQTT_SERVER),
-                                         getValueWithID("MQTT Server", true),
-                                         DEFAULT_MQTT_SERVER_DEFAULT,
-                                         MAX_WIFI_EXTRA_PARAM_MAX_LENGTH};
-        WiFiManagerParameter mqtt_port_param{getValueWithID(MQTT_PORT),
-                                       getValueWithID("MQTT Port", true),
-                                       DEFAULT_MQTT_PORT,
-                                       MAX_WIFI_EXTRA_PARAM_MAX_LENGTH};
-        WiFiManagerParameter mqtt_user_param{getValueWithID(MQTT_USER),
-                                       getValueWithID("MQTT User", true),
-                                       DEFAULT_MQTT_USER,
-                                       MAX_WIFI_EXTRA_PARAM_MAX_LENGTH};
-        WiFiManagerParameter mqtt_password_param{getValueWithID(MQTT_PASSWORD),
-                                           getValueWithID("MQTT Password", true),
-                                           DEFAULT_MQTT_PASSWORD,
-                                           MAX_WIFI_EXTRA_PARAM_MAX_LENGTH};
+        char mqtt_server_param_id[std::char_traits<char>::length(MQTT_SERVER)+2] = "";
+        char mqtt_server_param_label[std::char_traits<char>::length(MQTT_SERVER)+3] = "";
+        WiFiManagerParameter mqtt_server_param{mqtt_server_param_id,
+                                               mqtt_server_param_label,
+                                                DEFAULT_MQTT_SERVER_DEFAULT,
+                                                MAX_WIFI_EXTRA_PARAM_MAX_LENGTH};
+
+        char mqtt_port_param_id[std::char_traits<char>::length(MQTT_PORT)+2] = "";
+        char mqtt_port_param_label[std::char_traits<char>::length(MQTT_PORT)+3] = "";
+        WiFiManagerParameter mqtt_port_param{mqtt_port_param_id,
+                                             mqtt_port_param_label,
+                                             DEFAULT_MQTT_PORT,
+                                             MAX_WIFI_EXTRA_PARAM_MAX_LENGTH};
+
+        char mqtt_user_param_id[std::char_traits<char>::length(MQTT_USER)+2] = "";
+        char mqtt_user_param_label[std::char_traits<char>::length(MQTT_USER)+3] = "";
+        WiFiManagerParameter mqtt_user_param{mqtt_user_param_id,
+                                             mqtt_user_param_label,
+                                             DEFAULT_MQTT_USER,
+                                             MAX_WIFI_EXTRA_PARAM_MAX_LENGTH};
+
+        char mqtt_password_param_id[std::char_traits<char>::length(MQTT_PASSWORD)+2] = "";
+        char mqtt_password_param_label[std::char_traits<char>::length(MQTT_PASSWORD)+3] = "";
+        WiFiManagerParameter mqtt_password_param{mqtt_password_param_id,
+                                                 mqtt_password_param_label,
+                                                 DEFAULT_MQTT_PASSWORD,
+                                                 MAX_WIFI_EXTRA_PARAM_MAX_LENGTH};
 
         std::string mqttServer = DEFAULT_MQTT_SERVER_DEFAULT;
         unsigned mqttPort = std::stoi(DEFAULT_MQTT_PORT);
@@ -143,34 +166,44 @@ class MQTTController : public HasData<>,
         using HasData::updateObj;
 
         [[nodiscard]] std::string getWithOptLock(const std::string &key, const bool noLock) const override {
-            std::unique_lock l{_dataMutex, std::defer_lock};
-            switch(utils::hashstr(key.c_str())) {
-                case utils::hashstr(MQTT_SERVER): {
-                    if(!noLock)
-                        l.lock();
-                    return mqttServer;
-                }
-                case utils::hashstr(MQTT_PORT): {
-                    if(!noLock)
-                        l.lock();
-                    return std::to_string(mqttPort);
-                }
-                case utils::hashstr(MQTT_USER): {
-                    if(!noLock)
-                        l.lock();
-                    return mqttUser;
-                }
-                case utils::hashstr(MQTT_PASSWORD): {
-                    if(!noLock)
-                        l.lock();
-                    return mqttPassword;
-                }
-                default: {}
+//            std::unique_lock l{_dataMutex, std::defer_lock};
+//            switch(utils::hashstr(key.c_str())) {
+//                case utils::hashstr(MQTT_SERVER): {
+//                    if(!noLock)
+//                        l.lock();
+//                    return mqttServer;
+//                }
+//                case utils::hashstr(MQTT_PORT): {
+//                    if(!noLock)
+//                        l.lock();
+//                    return std::to_string(mqttPort);
+//                }
+//                case utils::hashstr(MQTT_USER): {
+//                    if(!noLock)
+//                        l.lock();
+//                    return mqttUser;
+//                }
+//                case utils::hashstr(MQTT_PASSWORD): {
+//                    if(!noLock)
+//                        l.lock();
+//                    return mqttPassword;
+//                }
+//                default: {}
+//            }
+//            Logger::logw(TAG, "Invalid key %s", key.c_str());
+//            return HasData::EMPTY_VALUE;
+            if(key == MQTT_PORT) {
+                std::unique_lock l{_dataMutex, std::defer_lock};
+                if (!noLock)
+                    l.lock();
+                return std::to_string(mqttPort);
             }
-            Logger::logw(TAG, "Invalid key %s", key.c_str());
-            return HasData::EMPTY_VALUE;
+            return getStringDataHelper({{MQTT_SERVER, mqttServer},
+                                        {MQTT_USER, mqttUser},
+//                                         {MQTT_PORT, mqttPort},
+                                        {MQTT_PASSWORD, mqttPassword}},
+                                    key, noLock);
         }
-
 
         [[nodiscard]] bool setWithOptLockAndUpdate(const std::string &key, const std::string &value, const bool noLock, const bool doObjUpdate) override {
             if(std::find(readOnlyKeys.begin(), readOnlyKeys.end(), key) != readOnlyKeys.end() ||
@@ -179,56 +212,110 @@ class MQTTController : public HasData<>,
                 return false;
             }
 
-            static std::vector<std::string> keysToUpdateOnObj = {};
-            bool updated = false;
+//            bool updated;
+//            std::unique_lock l{_dataMutex, std::defer_lock};
+//            switch(utils::hashstr(key.c_str())) {
+//                case utils::hashstr(MQTT_SERVER): {
+//                    if(!noLock)
+//                        l.lock();
+//                    updated = mqttServer != value;
+//                    if(updated) {
+//                        mqttServer = value;
+//                        if (doObjUpdate)
+//                            keysToUpdateOnObj.push_back(key);
+//                    }
+//                    break;
+//                }
+//                case utils::hashstr(MQTT_PORT): { // TODO: test valid conversions here
+//                    if(value.empty() || value == HasData::EMPTY_VALUE || !utils::isPositiveNumber(value)) {
+//                        Logger::loge(TAG, "Invalid port %s, not saving %s", value.c_str(), key.c_str());
+//                        return false;
+//                    }
+//                    auto numStoreValue = std::stoi(value);
+//                    if(numStoreValue > 65535 || numStoreValue <= 0) {
+//                        Logger::loge(TAG, "Invalid port %s, not saving %s", value.c_str(), key.c_str());
+//                        return false;
+//                    }
+//                    if(!noLock)
+//                        l.lock();
+//                    updated = mqttPort != numStoreValue;
+//                    if(updated) {
+//                        mqttPort = numStoreValue;
+//                        if (doObjUpdate)
+//                            keysToUpdateOnObj.push_back(key);
+//                    }
+//                    break;
+//                }
+//                case utils::hashstr(MQTT_USER): {
+//                    if(!noLock)
+//                        l.lock();
+//                    updated = mqttUser != value;
+//                    if(updated) {
+//                        mqttUser = value;
+//                        if (doObjUpdate)
+//                            keysToUpdateOnObj.push_back(key);
+//                    }
+//                    break;
+//                }
+//                case utils::hashstr(MQTT_PASSWORD): {
+//                    if(!noLock)
+//                        l.lock();
+//                    updated = mqttPassword != value;
+//                    if(updated) {
+//                        mqttPassword = value;
+//                        if (doObjUpdate)
+//                            keysToUpdateOnObj.push_back(key);
+//                    }
+//                    break;
+//                }
+//                default: {
+//                    Logger::logw(TAG, "Invalid key %s", key.c_str());
+//                    return false;
+//                }
+//            }
 
             std::unique_lock l{_dataMutex, std::defer_lock};
-            switch(utils::hashstr(key.c_str())) {
-                case utils::hashstr(MQTT_SERVER): {
-                    if(!noLock)
-                        l.lock();
-                    mqttServer = value;
-                    updated = true;
-                    keysToUpdateOnObj.push_back(key);
-                    break;
+
+            std::string updatedKey;
+            if(key == MQTT_PORT) { // TODO: test valid conversions here
+                if(value.empty() || value == HasData::EMPTY_VALUE || !utils::isPositiveNumber(value)) {
+                    Logger::loge(TAG, "Invalid port %s, not saving %s", value.c_str(), key.c_str());
+                    return false;
                 }
-                case utils::hashstr(MQTT_PORT): {
-                    if(value.empty() || value == HasData::EMPTY_VALUE || !utils::isPositiveNumber(value)) {
-                        Logger::loge(TAG, "Invalid port %s, not saving %s", value.c_str(), key.c_str());
-                        return false;
-                    }
-                    auto numStoreValue = std::stoi(value);
-                    if(numStoreValue > 65535 || numStoreValue <= 0) {
-                        Logger::loge(TAG, "Invalid port %s, not saving %s", value.c_str(), key.c_str());
-                        return false;
-                    }
-                    if(!noLock)
-                        l.lock();
+                auto numStoreValue = std::stoi(value);
+                if(numStoreValue > 65535 || numStoreValue <= 0) {
+                    Logger::loge(TAG, "Invalid port %s, not saving %s", value.c_str(), key.c_str());
+                    return false;
+                }
+                if(!noLock)
+                    l.lock();
+                if(mqttPort != numStoreValue) {
                     mqttPort = numStoreValue;
-                    updated = true;
-                    keysToUpdateOnObj.push_back(key);
-                    break;
+                    updatedKey = key;
                 }
-                case utils::hashstr(MQTT_USER): {
-                    if(!noLock)
-                        l.lock();
-                    mqttUser = value;
-                    updated = true;
-                    keysToUpdateOnObj.push_back(key);
-                    break;
-                }
-                case utils::hashstr(MQTT_PASSWORD): {
-                    if(!noLock)
-                        l.lock();
-                    mqttPassword = value;
-                    updated = true;
-                    keysToUpdateOnObj.push_back(key);
-                    break;
-                }
-                default: {}
             }
+
+            if(updatedKey.empty() && key != MQTT_PORT) {
+                updatedKey = setStringDataHelper({{MQTT_SERVER,   mqttServer},
+                                                 {MQTT_USER,     mqttUser},
+//                                                     {MQTT_PORT, mqttPort},
+                                                 {MQTT_PASSWORD, mqttPassword}},
+                                                key, value, noLock || l.owns_lock());
+            }
+
+            static std::vector<std::string> keysToUpdateOnObj = {};
+            bool updated = !updatedKey.empty();
+            if(updated) {
+                if (doObjUpdate) {
+                    if (!noLock && !l.owns_lock())
+                        l.lock();
+
+                    keysToUpdateOnObj.push_back(updatedKey);
+                }
+            }
+
             if(doObjUpdate && !keysToUpdateOnObj.empty()) {
-                const bool objUpdated = updateObj(keysToUpdateOnObj, l.owns_lock());
+                const bool objUpdated = updateObj(keysToUpdateOnObj, noLock || l.owns_lock()) || updated; // include updated since vars were updated
                 if(objUpdated) {
                     Logger::logv(TAG, "Updated %s", utils::join(keysToUpdateOnObj, ", ").c_str());
                     keysToUpdateOnObj.clear();

@@ -20,7 +20,7 @@ extern const uint8_t x509_crt_imported_bundle_bin_start[] asm("_binary_x509_crt_
 
 
 void MQTTController::registerSubscriptions() {
-    client.subscribe((topicPrefix + "/#").c_str());
+    client.subscribe((topicPrefix + "/update/#").c_str());
 }
 
 void MQTTController::publishData() {
@@ -40,7 +40,7 @@ void MQTTController::publishData() {
     for(auto const &item : hasDataItems) {
         const auto &data = item->getData();
         for(auto const &data_item : data) {
-            client.publish((topicPrefix + "/" + item->getInstanceID() + "/" + data_item.first).c_str(), data_item.second.c_str(), true, 0);
+            client.publish((topicPrefix + "/status/" + item->getInstanceID() + "/" + data_item.first).c_str(), data_item.second.c_str(), true, 0);
         }
     }
 }
@@ -60,9 +60,12 @@ void MQTTController::messageReceived(String &topic, String &payload) {
     const auto &item_key = topic_parts[topic_parts.size() - 2];
     const auto &item_data_key = topic_parts[topic_parts.size() - 1];
     for(auto const &item : hasDataItems) {
-        if(item_key == item->getInstanceID()) {
-            if(!item->set(item_data_key, payload.c_str()))
-                Logger::loge(TAG, "Failed to set %s to %s", item_data_key.c_str(), payload.c_str());
+        const auto itemReadOnlyKeys = item->getReadOnlyKeys();
+        if(item_key == item->getInstanceID() &&
+                std::find(itemReadOnlyKeys.begin(), itemReadOnlyKeys.end(), item_data_key) == itemReadOnlyKeys.end()) {
+            if(!item->set(item_data_key, payload.c_str())) {
+                Logger::logw(TAG, "Failed to set %s to %s, may have not changed or was invalid", item_data_key.c_str(), payload.c_str());
+            }
             return;
         }
     }
@@ -96,16 +99,20 @@ void MQTTController::connect() {
 }
 
 void MQTTController::disconnect() {
-    if(!lastWillTopic.empty() && !offlineMsg.empty()) 
-        client.publish(lastWillTopic.c_str(), offlineMsg.c_str(), true, 0);
-    client.disconnect();    
-    Logger::logi(TAG, "MQTT disconnected!");
+    Logger::logv(TAG, "[disconnect]");
+        
+    if (client.connected()) {
+        if(!lastWillTopic.empty() && !offlineMsg.empty()) 
+            client.publish(lastWillTopic.c_str(), offlineMsg.c_str(), true, 0);
+        client.disconnect();    
+        Logger::logi(TAG, "MQTT disconnected!");
+    }
 }
 
 void MQTTController::mqttLoop() {
     static unsigned long lastPub = 0;
     connect();
-    while(utils::wait_for<std::chrono::seconds>(std::chrono::seconds(1), loopThreadMutex, loopThreadCond, loopThreadStop)) {
+    while(utils::wait_for<std::chrono::milliseconds>(std::chrono::milliseconds(10), loopThreadMutex, loopThreadCond, loopThreadStop)) {
         if (!client.connected())
             connect();
         client.loop();
@@ -222,8 +229,14 @@ MQTTController::~MQTTController() {
 void MQTTController::updateDataVarsFromWifiParams() {
     Logger::logv(TAG, "[updateDataVarsFromWifiParams]");
     std::map<std::string, std::string> dataToUpdate = {};
-    for(auto &setting : getSettingParamsNoUpdate())
-        dataToUpdate[setting->getID()] = setting->getValue();
+    for(WiFiManagerParameter *setting : getSettingParamsNoUpdate()) {
+        // find key from setting ID by checking ID starts with key
+        const std::string id = setting->getID();
+        const auto &key= std::find_if(keys.begin(), keys.end(),
+                                      [&id](const std::string &key) { return id.find(key) == 0; });
+        if(key != keys.end())
+            dataToUpdate[*key] = setting->getValue();
+    }
     if(!setData(dataToUpdate))
         Logger::loge(TAG, "Failed to save data from WiFi params");
 }
@@ -231,9 +244,15 @@ void MQTTController::updateDataVarsFromWifiParams() {
 void MQTTController::updateWiFiParamsFromDataVars() {
     Logger::logv(TAG, "[updateWiFiParamsFromDataVars]");
     for(auto &setting : getSettingParamsNoUpdate()) {
-        std::string value = get(setting->getID());
-        if(!value.empty())
-            setting->setValue(value.c_str(), MAX_WIFI_EXTRA_PARAM_MAX_LENGTH);
+        // find key from setting ID by checking ID starts with key
+        const std::string id = setting->getID();
+        const auto &key= std::find_if(keys.begin(), keys.end(),
+                                      [&id](const std::string &key) { return id.find(key) == 0; });
+        if(key != keys.end()) {
+            const std::string value = get(*key);
+//            if (!value.empty())
+                setting->setValue(value.c_str(), MAX_WIFI_EXTRA_PARAM_MAX_LENGTH);
+        }
     }
 }
 
