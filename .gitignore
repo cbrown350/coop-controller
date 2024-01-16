@@ -54,6 +54,7 @@ build
 compile_commands.json
 .devcontainer/data
 managed_components
+*.old
 
 # Local History for Visual Studio Code
 .history/

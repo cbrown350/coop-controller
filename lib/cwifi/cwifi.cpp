@@ -307,6 +307,9 @@ namespace cwifi {
     wm.setDebugOutput(false);
 #endif
 
+    // set custom html head content , inside <head>
+    wm.setCustomHeadElement(wifiFaviconHTMLHeader);
+
 //    wm.setTimeout(WIFI_SETUP_TIMEOUT_SECS); // superseded by below functions
     wm.setConnectTimeout(WIFI_SETUP_TIMEOUT_SECS);
     wm.setConfigPortalTimeout(WIFI_SETUP_TIMEOUT_SECS);

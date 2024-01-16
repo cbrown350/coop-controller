@@ -20,7 +20,7 @@ public:
     ~SimpleLogger() override = default;
     explicit SimpleLogger(const bool showTime = true, HardwareSerial &printStream=Serial, const unsigned defaultPrintStreamLevel=SIMPLE_PRINTSTREAM_DEFAULT_LEVEL)
 #if defined(ENABLE_LOGGING)
-            : Logger(), showTime(showTime), printStream(&printStream){
+            : Logger(), showTime(showTime), printStream(&printStream), loggerPrinter(this) {
         _defaultPrintStreamLevel = defaultPrintStreamLevel;
         printStream.begin(SERIAL_BAUD_RATE);
         setDefaultPrintStream(&loggerPrinter);
@@ -30,7 +30,7 @@ public:
 private:
     class SimpleLoggerPrinter : public Print {
     public:
-        explicit SimpleLoggerPrinter() : Print(){ };
+        explicit SimpleLoggerPrinter(SimpleLogger *simpleLogger) : Print(), simpleLogger(simpleLogger) { };
         ~SimpleLoggerPrinter() override = default;
 
         size_t write(const uint8_t c) override {
@@ -41,7 +41,7 @@ private:
                 _buffer[bufferIdx++] = c;
             if (bufferIdx >= BUFFER_SIZE-1 || c == '\n' || c == '\r' || c == '\0' || (!flushed && now - last_write_time > BUFFER_FLUSH_MS)) {
                 _buffer[bufferIdx] = '\0';
-                printLog(DEFAULT_PRINTSTREAM_TAG, _defaultPrintStreamLevel,
+                simpleLogger->printLog(DEFAULT_PRINTSTREAM_TAG, _defaultPrintStreamLevel,
                                        reinterpret_cast<const char *>(_buffer));
                 bufferIdx = 0;
                 flushed = true;
@@ -63,6 +63,7 @@ private:
         int availableForWrite() override { return 1; };
 
     private:
+        SimpleLogger *simpleLogger;
         constexpr static int BUFFER_FLUSH_MS = 5;
         constexpr static int BUFFER_SIZE = 150;
         unsigned char _buffer[BUFFER_SIZE]{0};
@@ -74,29 +75,32 @@ private:
     bool showTime = true;
     HardwareSerial *printStream;
     inline static unsigned _defaultPrintStreamLevel = LOG_LEVEL_INFO;
-    SimpleLoggerPrinter loggerPrinter;
+    SimpleLoggerPrinter loggerPrinter{this};
 
-    static void printLog(const char * tag, const unsigned level, const char * msg) {
-        switch(level) {
+    void printLog(const char * tag, const unsigned level, const char * msg) {
+        // create new char array with tag in brackets and msg
+        char msg_with_tag[LOG_TAG_MAX_LEN + 3 + strlen(msg) + 1]{};
+        sprintf((char*)msg_with_tag, "[%s] %s", tag, msg);
+        switch(level) { // can't call static logx methods since they lock the mutex
             case LOG_LEVEL_NONE:
                 return;
             case LOG_LEVEL_ERROR:
-                loge(tag, msg);
+                v_loge(msg_with_tag);
                 break;
             case LOG_LEVEL_WARN:
-                logw(tag, msg);
+                v_logw(msg_with_tag);
                 break;
             case LOG_LEVEL_INFO:
-                logi(tag, msg);
+                v_logi(msg_with_tag);
                 break;
             case LOG_LEVEL_DEBUG:
-                logd(tag, msg);
+                v_logd(msg_with_tag);
                 break;
             case LOG_LEVEL_VERBOSE:
-                logv(tag, msg);
+                v_logv(msg_with_tag);
                 break;
             default:
-                logi(tag, msg);
+                v_logi(msg_with_tag);
                 break;
         }
     }

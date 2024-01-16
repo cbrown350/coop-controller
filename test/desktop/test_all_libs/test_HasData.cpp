@@ -1,7 +1,7 @@
 
 #include <gtest/gtest.h>
 
-#include "DesktopLoggerFixture.h"
+#include "../DesktopLoggerFixture.h"
 
 #include <utils.h>
 

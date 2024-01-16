@@ -103,7 +103,7 @@ extern "C" void app_main() {
 //            if(i % 1000 == 0)
 //                Logger<>::logi(TAG, "brightness: %d, frequency: %s", i, runLightDimmer.get(LeadingEdgePhaseDimmer::FREQUENCY).c_str());
         }
-      //  runLightDimmer.setBrightness(0);
+       runLightDimmer.setBrightness(0);
        vTaskDelay(1 / portTICK_PERIOD_MS);
           //  vTaskDelay(10 / portTICK_PERIOD_MS);
 

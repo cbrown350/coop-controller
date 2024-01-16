@@ -36,7 +36,7 @@ bool HasData<>::loadNvsData() {
             Logger::loge(getTag(), "Failed to open NVS (ro) after successful init namespace %s", nvsNamespace.c_str());
             return false;
         }
-        // namespace was just created, so no need to load data
+        Logger::logv(getTag(), "Namespace %s was just created, so no data to load", nvsNamespace.c_str());
         nvs.end();
         return true;
     }
@@ -100,10 +100,10 @@ bool HasData<>::saveNvsData(const std::vector<std::string> &keys, const bool _da
         if(std::find(readOnlyKeys.begin(), readOnlyKeys.end(), key) == readOnlyKeys.end() &&
                   std::find(nvsKeys.begin(), nvsKeys.end(), key) != nvsKeys.end()) {
             const auto value = getWithOptLock(key, true);
-//            if(std::string(nvs.getString(key.c_str(), EMPTY_VALUE).c_str()) == value) {
-//                Logger::logv(getTag(), "Skipping %s = %s, already saved", key.c_str(), value.c_str());
-//                continue;
-//            }
+            if(std::string(nvs.getString(key.c_str(), EMPTY_VALUE).c_str()) == value) {
+               Logger::logv(getTag(), "Skipping %s = %s, already saved", key.c_str(), value.c_str());
+               continue;
+            }
             if(value == EMPTY_VALUE) {
                 nvs.remove(key.c_str());
             } else if(nvs.putString(key.c_str(), value.c_str()) != value.length()) {

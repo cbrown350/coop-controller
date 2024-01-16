@@ -84,6 +84,8 @@ RUN mkdir -p ~/.local/bin \
     && ln -s ~/.platformio/penv/bin/pio ~/.local/bin/pio \
     && ln -s ~/.platformio/penv/bin/piodebuggdb ~/.local/bin/piodebuggdb
 
+RUN echo "add-auto-load-safe-path /workspace/.gdbinit" > ~/.gdbinit    
+
 WORKDIR /workspace
 
 ENTRYPOINT ["platformio"] 

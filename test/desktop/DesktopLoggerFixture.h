@@ -3,6 +3,10 @@
 
 #include <gtest/gtest.h>
 
+#if defined(ARDUINO) || defined(ESP32)
+#pragma GCC error "This header should not be included in embedded"
+#endif
+
 #include "DesktopLogger.h"
 
 class DesktopLoggerFixture : public ::testing::Test {

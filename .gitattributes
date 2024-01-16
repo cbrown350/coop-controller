@@ -27,6 +27,9 @@ Dockerfile text eol=lf
 *.js text eol=lf
 *.md text eol=lf
 
+# VS Code
+.vscode/settings.json text eol=lf filter=vscode-settings
+
 ################################
 ## Git Large File System (LFS) #
 ################################

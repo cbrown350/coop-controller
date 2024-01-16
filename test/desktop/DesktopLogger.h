@@ -9,6 +9,10 @@
 
 #include <Logger.h>
 
+#if defined(ARDUINO) || defined(ESP32)
+#pragma GCC error "This header should not be included in embedded"
+#endif
+
 #ifndef LOG_LEVEL_NONE
 #define LOG_LEVEL_NONE 0
 #endif

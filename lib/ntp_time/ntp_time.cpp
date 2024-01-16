@@ -143,7 +143,7 @@ namespace ntp_time {
 //                    }
                     // TODO: check values are valid
                     const auto updatedKey = setStringDataHelper({{TIMEZONE,   timezone},
-                                                                                    {NTP_SERVER1, ntpServer1}},
+                                                                  {NTP_SERVER1, ntpServer1}},
                                                                             key, value, noLock);
                     bool updated = !updatedKey.empty();
                     if(updated) {
@@ -232,11 +232,11 @@ namespace ntp_time {
             success = false;
         }
 
-        Logger::logv(TAG, "[setTimezoneAndNTP] timezone: %s (%s)", _timezone, espTimezone);
-        Logger::logv(TAG, "[setTimezoneAndNTP] ntp_server1: %s", _ntp_server1);
-//        Logger::logv(TAG, "[setTimezoneAndNTP] ntp_server2: %s", _ntp_server2);
-//        Logger::logv(TAG, "[setTimezoneAndNTP] ntp_server3: %s", _ntp_server3);
-        Logger::logv(TAG, "[setTimezoneAndNTP] current time: %s", getCurrentTime().c_str());
+        Logger::logi(TAG, "[setTimezoneAndNTP] timezone: %s (%s)", _timezone, espTimezone);
+        Logger::logi(TAG, "[setTimezoneAndNTP] ntp_server1: %s", _ntp_server1);
+//        Logger::logi(TAG, "[setTimezoneAndNTP] ntp_server2: %s", _ntp_server2);
+//        Logger::logi(TAG, "[setTimezoneAndNTP] ntp_server3: %s", _ntp_server3);
+        Logger::logi(TAG, "[setTimezoneAndNTP] current time: %s", getCurrentTime().c_str());
 
         return success;
     }

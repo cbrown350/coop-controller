@@ -6,7 +6,7 @@
 #include <vector>
 #include <mutex>
 
-#include "DesktopLogger.h"
+#include "../DesktopLogger.h"
 
 #include <utils.h>
 

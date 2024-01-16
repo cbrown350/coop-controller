@@ -1,6 +1,10 @@
 #ifndef _PREFERENCES_H
 #define _PREFERENCES_H
 
+#if defined(ARDUINO) || defined(ESP32)
+#pragma GCC error "This header should not be included in embedded"
+#endif
+
 #include <string>
 #include <map>
 #include <cstring>
