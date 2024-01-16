@@ -141,5 +141,5 @@
     "gcovViewer.buildDirectories": [
         
     ],
-    "sonarlint.pathToCompileCommands": "${workspaceFolder}\\.pio\\build\\esp32-release\\compile_commands.json",
+    
 }
