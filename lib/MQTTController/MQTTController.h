@@ -166,32 +166,6 @@ class MQTTController : public HasData<>,
         using HasData::updateObj;
 
         [[nodiscard]] std::string getWithOptLock(const std::string &key, const bool noLock) const override {
-//            std::unique_lock l{_dataMutex, std::defer_lock};
-//            switch(utils::hashstr(key.c_str())) {
-//                case utils::hashstr(MQTT_SERVER): {
-//                    if(!noLock)
-//                        l.lock();
-//                    return mqttServer;
-//                }
-//                case utils::hashstr(MQTT_PORT): {
-//                    if(!noLock)
-//                        l.lock();
-//                    return std::to_string(mqttPort);
-//                }
-//                case utils::hashstr(MQTT_USER): {
-//                    if(!noLock)
-//                        l.lock();
-//                    return mqttUser;
-//                }
-//                case utils::hashstr(MQTT_PASSWORD): {
-//                    if(!noLock)
-//                        l.lock();
-//                    return mqttPassword;
-//                }
-//                default: {}
-//            }
-//            Logger::logw(TAG, "Invalid key %s", key.c_str());
-//            return HasData::EMPTY_VALUE;
             if(key == MQTT_PORT) {
                 std::unique_lock l{_dataMutex, std::defer_lock};
                 if (!noLock)
@@ -205,102 +179,44 @@ class MQTTController : public HasData<>,
                                     key, noLock);
         }
 
-        [[nodiscard]] bool setWithOptLockAndUpdate(const std::string &key, const std::string &value, const bool noLock, const bool doObjUpdate) override {
+        [[nodiscard]] bool setWithOptLockAndUpdate(const std::string &key, const std::string &value_raw, const bool noLock, const bool doObjUpdate) override {
             if(std::find(readOnlyKeys.begin(), readOnlyKeys.end(), key) != readOnlyKeys.end() ||
                 std::find(keys.begin(), keys.end(), key) == keys.end()) {
                 Logger::logw(TAG, "Key %s is read-only or not found", key.c_str());
                 return false;
             }
-
-//            bool updated;
-//            std::unique_lock l{_dataMutex, std::defer_lock};
-//            switch(utils::hashstr(key.c_str())) {
-//                case utils::hashstr(MQTT_SERVER): {
-//                    if(!noLock)
-//                        l.lock();
-//                    updated = mqttServer != value;
-//                    if(updated) {
-//                        mqttServer = value;
-//                        if (doObjUpdate)
-//                            keysToUpdateOnObj.push_back(key);
-//                    }
-//                    break;
-//                }
-//                case utils::hashstr(MQTT_PORT): { // TODO: test valid conversions here
-//                    if(value.empty() || value == HasData::EMPTY_VALUE || !utils::isPositiveNumber(value)) {
-//                        Logger::loge(TAG, "Invalid port %s, not saving %s", value.c_str(), key.c_str());
-//                        return false;
-//                    }
-//                    auto numStoreValue = std::stoi(value);
-//                    if(numStoreValue > 65535 || numStoreValue <= 0) {
-//                        Logger::loge(TAG, "Invalid port %s, not saving %s", value.c_str(), key.c_str());
-//                        return false;
-//                    }
-//                    if(!noLock)
-//                        l.lock();
-//                    updated = mqttPort != numStoreValue;
-//                    if(updated) {
-//                        mqttPort = numStoreValue;
-//                        if (doObjUpdate)
-//                            keysToUpdateOnObj.push_back(key);
-//                    }
-//                    break;
-//                }
-//                case utils::hashstr(MQTT_USER): {
-//                    if(!noLock)
-//                        l.lock();
-//                    updated = mqttUser != value;
-//                    if(updated) {
-//                        mqttUser = value;
-//                        if (doObjUpdate)
-//                            keysToUpdateOnObj.push_back(key);
-//                    }
-//                    break;
-//                }
-//                case utils::hashstr(MQTT_PASSWORD): {
-//                    if(!noLock)
-//                        l.lock();
-//                    updated = mqttPassword != value;
-//                    if(updated) {
-//                        mqttPassword = value;
-//                        if (doObjUpdate)
-//                            keysToUpdateOnObj.push_back(key);
-//                    }
-//                    break;
-//                }
-//                default: {
-//                    Logger::logw(TAG, "Invalid key %s", key.c_str());
-//                    return false;
-//                }
-//            }
+            const std::string value = utils::trim_clean(value_raw);
 
             std::unique_lock l{_dataMutex, std::defer_lock};
 
             std::string updatedKey;
-            if(key == MQTT_PORT) { // TODO: test valid conversions here
+
+            const auto portConverter = [](const std::string &key, std::any varPtr, const std::string &value) {
+                Logger::logv(TAG, "[portConverter]");
+//                return lookupESPTimezone(value) && setStringDataHelperStringSetter(varPtr, value);
                 if(value.empty() || value == HasData::EMPTY_VALUE || !utils::isPositiveNumber(value)) {
                     Logger::loge(TAG, "Invalid port %s, not saving %s", value.c_str(), key.c_str());
                     return false;
                 }
-                auto numStoreValue = std::stoi(value);
+                auto numStoreValue = (unsigned)std::stoi(value);
                 if(numStoreValue > 65535 || numStoreValue <= 0) {
                     Logger::loge(TAG, "Invalid port %s, not saving %s", value.c_str(), key.c_str());
                     return false;
                 }
-                if(!noLock)
-                    l.lock();
-                if(mqttPort != numStoreValue) {
-                    mqttPort = numStoreValue;
-                    updatedKey = key;
+                unsigned &var = *std::any_cast<unsigned*>(varPtr);
+                if(var != numStoreValue) {
+                    var = numStoreValue;
+                    return true;
                 }
-            }
-
+                return false;
+            };
             if(updatedKey.empty() && key != MQTT_PORT) {
-                updatedKey = setStringDataHelper({{MQTT_SERVER,   mqttServer},
-                                                 {MQTT_USER,     mqttUser},
-//                                                     {MQTT_PORT, mqttPort},
-                                                 {MQTT_PASSWORD, mqttPassword}},
-                                                key, value, noLock || l.owns_lock());
+                updatedKey = setStringDataHelper({
+                                                 {MQTT_SERVER,   {&mqttServer}},
+                                                 {MQTT_USER,     {&mqttUser}},
+                                                 {MQTT_PORT, {&mqttPort, portConverter}},
+                                                 {MQTT_PASSWORD, {&mqttPassword}}},
+                                                            key, value, noLock || l.owns_lock());
             }
 
             static std::vector<std::string> keysToUpdateOnObj = {};

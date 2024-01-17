@@ -5,6 +5,7 @@
 #include <map>
 #include <string>
 #include <algorithm>
+#include <any>
 #include <utility>
 #include <Logger.h>
 
@@ -90,6 +91,7 @@ class HasData {
 
         [[nodiscard]] virtual const char * getTag() const = 0;
 
+
     protected:
         inline static std::mutex nvsDataMutex;
         mutable std::mutex _dataMutex;
@@ -132,6 +134,23 @@ class HasData {
             return keyVarPairs.at(key);
         }
 
+        class VarHolder {
+        public:
+            std::any varPtr;
+            using FuncType = bool(*)(const std::string &key, std::any varPtr, const std::string &value);
+            FuncType converterSetter;
+            VarHolder(std::any varPtr, FuncType converterSetter = nullptr) : varPtr(std::move(varPtr)), converterSetter(converterSetter) { }
+        };
+
+        [[nodiscard]] inline static bool setStringDataHelperStringSetter(std::any &varPtr, const std::string &value) {
+            std::string &var = *std::any_cast<std::string*>(varPtr);
+            if(var != value) {
+                var = value;
+                return true;
+            }
+            return false;
+        }
+
 //#if defined(ARDUINO)
 //        /* Helper method to generically set string value from a map of key/String value ptr pairs, returns empty string if value not changed.
 //         *   `_dataMutex` may be locked already when calling this method if `noLock` is true. */
@@ -143,17 +162,17 @@ class HasData {
 //#endif
 
         /* Helper method to generically set string value from a map of key/value ptr pairs, returns empty string if value not changed.
-         *   `_dataMutex` may be locked already when calling this method if `noLock` is true. */
-        template<class T=std::string>
-        [[nodiscard]] std::string setStringDataHelper(const std::map<const std::string, T&> &keyVarPairs,
-                                                     const std::string &key, const T &value, const bool noLock) {
+         *   `_dataMutex` may be locked already when calling this method if `noLock` is true. 
+         *   `converterSetter` is optional and can be used to convert the value and set it using varPtr.*/
+        [[nodiscard]] std::string setStringDataHelper(std::map<const std::string, VarHolder> keyVarHolderPairs_,
+                                                     const std::string &key, const std::string &value, const bool noLock) {
             const auto _readOnlyKeys = getReadOnlyKeys();
             if(std::find(_readOnlyKeys.begin(), _readOnlyKeys.end(), key) != _readOnlyKeys.end()) {
                 Logger::logw(getTag(), "Key '%s' is read-only", key.c_str());
                 return "";
             }
-
-            if(keyVarPairs.find(key) == keyVarPairs.end()) {
+            auto keyVarHolderPairs = std::move(keyVarHolderPairs_);
+            if(keyVarHolderPairs.find(key) == keyVarHolderPairs.end()) {
                 Logger::logw(getTag(), "Invalid key '%s', not found", key.c_str());
                 return "";
             }
@@ -161,12 +180,15 @@ class HasData {
             std::unique_lock l{_dataMutex, std::defer_lock};
             if(!noLock)
                 l.lock();
-            T &var = keyVarPairs.at(key);
-            if(var != value) {
-                var = value;
+            VarHolder &varHolder = keyVarHolderPairs.at(key);
+            if(varHolder.converterSetter != nullptr) {
+                if(!varHolder.converterSetter(key, varHolder.varPtr, value)) {
+                    Logger::logw(getTag(), "Same or invalid value or conversion failed for value '%s' for key '%s'", value.c_str(), key.c_str());
+                    return "";
+                }
                 return key;
             }
-            return "";
+            return setStringDataHelperStringSetter(varHolder.varPtr, value) ? key : "";
         }
 
 };

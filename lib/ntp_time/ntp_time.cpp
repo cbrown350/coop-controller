@@ -22,7 +22,8 @@ namespace ntp_time {
 //    static std::string ntpServer2 = NTP_SERVER2_DEFAULT;
 //    static std::string ntpServer3 = NTP_SERVER3_DEFAULT;
 
-    bool setTimezoneAndNTP();
+    [[nodiscard]] bool setTimezoneAndNTP();
+    [[nodiscard]] bool lookupESPTimezone(const std::string &regularTimezone, char * espTimezone=nullptr);
 
     namespace {
         class _ : public HasData<> {
@@ -45,40 +46,6 @@ namespace ntp_time {
 
             private:
                 [[nodiscard]] std::string getWithOptLock(const std::string &key, const bool noLock) const override {
-//                    std::unique_lock l{_dataMutex, std::defer_lock};
-//                    switch(utils::hashstr(key.c_str())) {
-//                        case utils::hashstr(UPTIME): {
-//                            if(!noLock)
-//                                l.lock();
-//                            return getUptime();
-//                        }
-//                        case utils::hashstr(CURRENT_TIME): {
-//                            if(!noLock)
-//                                l.lock();
-//                            return getCurrentTime();
-//                        }
-//                        case utils::hashstr(FREE_MEMORY): {
-//                            if(!noLock)
-//                                l.lock();
-//                            return getFreeMemory();
-//                        }
-//                        case utils::hashstr(TIMEZONE): {
-//                            if(!noLock)
-//                                l.lock();
-//                            return timezone;
-//                        }
-//                        case utils::hashstr(NTP_SERVER1): {
-//                            if(!noLock)
-//                                l.lock();
-//                            return ntpServer1;
-//                        }
-////                        case utils::hashstr(NTP_SERVER2):
-////                        case utils::hashstr(NTP_SERVER3):
-//                        default: {}
-//                    }
-//                    Logger::logw(TAG, "Invalid key %s", key.c_str());
-//                    return HasData::EMPTY_VALUE;std::function<std::string()>
-
                     using retType = std::string;
                     using FunPtrType = retType(*)();
                     return getStringDataHelper<FunPtrType>({
@@ -89,17 +56,9 @@ namespace ntp_time {
                                        {NTP_SERVER1,  (FunPtrType)[]()->retType { return ntpServer1; } }
                                        },
                                    key, noLock, []()->retType { return HasData::EMPTY_VALUE; })();
-//                    return getStringDataHelper({
-//                                       {UPTIME,       getUptime()},
-//                                       {CURRENT_TIME, getCurrentTime()},
-//                                       {FREE_MEMORY,  getFreeMemory()},
-//                                       {TIMEZONE,     timezone},
-//                                       {NTP_SERVER1,  ntpServer1}
-//                                       },
-//                                   key, noLock);
                 }
 
-                [[nodiscard]] bool setWithOptLockAndUpdate(const std::string &key, const std::string &value,
+                [[nodiscard]] bool setWithOptLockAndUpdate(const std::string &key, const std::string &value_raw,
                                                            const bool noLock, const bool doObjUpdate) override {
                     if(std::find(readOnlyKeys.begin(), readOnlyKeys.end(), key) != readOnlyKeys.end() ||
                         std::find(keys.begin(), keys.end(), key) == keys.end()) {
@@ -107,43 +66,17 @@ namespace ntp_time {
                         return false;
                     }
 
+                    const std::string value = utils::trim_clean(value_raw);
+
                     static std::vector<std::string> keysToUpdateOnObj = {};
-//                    bool updated = false;
-//
-//                    std::unique_lock l{_dataMutex, std::defer_lock};
-//                    switch(utils::hashstr(key.c_str())) {
-//                        case utils::hashstr(TIMEZONE): {
-//                            if(!noLock)
-//                                l.lock();
-//                            updated = timezone != value;
-//                            if(updated) {
-//                                timezone = value;
-//                                if (doObjUpdate)
-//                                    keysToUpdateOnObj.push_back(key);
-//                            }
-//                            break;
-//                        }
-//                        case utils::hashstr(NTP_SERVER1): {
-//                            if(!noLock)
-//                                l.lock();
-//                            updated = ntpServer1 != value;
-//                            if(updated) {
-//                                ntpServer1 = value;
-//                                if (doObjUpdate)
-//                                    keysToUpdateOnObj.push_back(key);
-//                            }
-//                            break;
-//                        }
-////                        case utils::hashstr(NTP_SERVER2):
-////                        case utils::hashstr(NTP_SERVER3):
-//                        default: {
-//                            Logger::logw(TAG, "Invalid key %s", key.c_str());
-//                            return false;
-//                        }
-//                    }
+                    const auto timezoneConverter = [](const std::string &key, std::any varPtr, const std::string &value) {
+                        Logger::logv(TAG, "[timezoneConverter]");
+                        return lookupESPTimezone(value) && setStringDataHelperStringSetter(varPtr, value);
+                    };
                     // TODO: check values are valid
-                    const auto updatedKey = setStringDataHelper({{TIMEZONE,   timezone},
-                                                                  {NTP_SERVER1, ntpServer1}},
+                    const auto updatedKey = setStringDataHelper({
+                                                {TIMEZONE, {&timezone, timezoneConverter}},
+                                                {NTP_SERVER1, {&ntpServer1}}},
                                                                             key, value, noLock);
                     bool updated = !updatedKey.empty();
                     if(updated) {
@@ -177,7 +110,7 @@ namespace ntp_time {
     HasData<> &getData() {
         return data;
     }
-    std::string get(const std::string &key) {
+    [[nodiscard]] std::string get(const std::string &key) {
         return data.get(key);
     }
 
@@ -198,7 +131,18 @@ namespace ntp_time {
 //                                     NTP_SERVER3_DEFAULT,
 //                                     MAX_WIFI_EXTRA_PARAM_MAX_LENGTH};
 
-    void lookupESPTimezone(const std::string &regularTimezone, char * espTimezone) {
+
+    inline static std::string lastRegularTimezone;
+    inline static std::string lastEspTimezone;
+    [[nodiscard]] bool lookupESPTimezone(const std::string &regularTimezone, char * espTimezone) {
+        if(regularTimezone.empty())
+            return false;
+        if(regularTimezone == lastRegularTimezone) {
+            if(espTimezone != nullptr && !lastEspTimezone.empty())
+                strcpy(espTimezone, lastEspTimezone.c_str());
+            return true;
+        }
+
         CSV_Parser cp(zones_csv_start, /*format*/ "ss", false);
         char **regularTimezoneFields = (char**)cp[0];
         char **espTimezoneFields = (char**)cp[1];
@@ -206,30 +150,35 @@ namespace ntp_time {
 //            Logger::logv(TAG, "[lookupESPTimezone] regularTimezoneFields[%d]: %s, espTimezoneFields[%d]: %s",
 //                          row_index, regularTimezoneFields[row_index], row_index, espTimezoneFields[row_index]);
             if(strcmp(regularTimezoneFields[row_index], regularTimezone.c_str()) == 0) {
-                strcpy(espTimezone, espTimezoneFields[row_index]);
                 Logger::logv(TAG, "[lookupESPTimezone] Found timezone %s->%s in zones.csv",
-                                                        regularTimezone.c_str(), espTimezone);
+                                                        regularTimezone.c_str(), espTimezoneFields[row_index]);
+                lastRegularTimezone = regularTimezone;
+                lastEspTimezone = (std::string)espTimezoneFields[row_index];                                                        
+                if(espTimezone != nullptr)
+                    strcpy(espTimezone, espTimezoneFields[row_index]);
+                return true;                                                        
             }
         }
+        Logger::loge(TAG, "Timezone %s not found in zones.csv", regularTimezone.c_str());
+        return false;
     }
 
-    bool setTimezoneAndNTP() {
+    [[nodiscard]] bool setTimezoneAndNTP() {
         static char espTimezone[50] = "";
-        bool success = true;
 
         const char * _timezone = timezone.c_str();
         const char * _ntp_server1 = ntpServer1.c_str();
 //        const char * _ntp_server2 = ntpServer2.c_str();
 //        const char * _ntp_server3 = ntpServer3.c_str();
-        lookupESPTimezone(_timezone, espTimezone);
+        const bool found = lookupESPTimezone(_timezone, espTimezone);
 
         // note: second and third servers are not used by ESP32 in configTzTime function call
-        if(espTimezone[0] != '\0') {
+        if(espTimezone[0] != '\0' && found) {
             configTzTime(espTimezone, _ntp_server1, "_ntp_server2", "_ntp_server3");
         } else {
             Logger::logw(TAG, "[setTimezoneAndNTP] Timezone %s not found in zones.csv; couldn't set _timezone", _timezone);
             configTime(0, 0, _ntp_server1, "_ntp_server2", "_ntp_server3");
-            success = false;
+            return false;
         }
 
         Logger::logi(TAG, "[setTimezoneAndNTP] timezone: %s (%s)", _timezone, espTimezone);
@@ -238,14 +187,14 @@ namespace ntp_time {
 //        Logger::logi(TAG, "[setTimezoneAndNTP] ntp_server3: %s", _ntp_server3);
         Logger::logi(TAG, "[setTimezoneAndNTP] current time: %s", getCurrentTime().c_str());
 
-        return success;
+        return true;
     }
 
     bool update() {
         return setTimezoneAndNTP();
     }
 
-    std::string& getUptime() { // TODO: dataMux lock?
+    [[nodiscard]] std::string& getUptime() { // TODO: dataMux lock?
         static std::string uptime_str;
         auto now = esp_timer_get_time();
         auto uptime = now / 1000000;
@@ -258,7 +207,7 @@ namespace ntp_time {
         return uptime_str;
     }
 
-    std::string& getCurrentTime() { // TODO: dataMux lock?
+    [[nodiscard]] std::string& getCurrentTime() { // TODO: dataMux lock?
         static std::string time_str;
         auto now = time(nullptr);
         time_str = ctime(&now);
@@ -309,10 +258,11 @@ namespace ntp_time {
         Logger::logv(TAG, "[init]");
         if(!data.loadNvsData())
             Logger::loge(TAG, "Failed to load data from NVS");
-        setTimezoneAndNTP();
+        if(!setTimezoneAndNTP())
+            Logger::loge(TAG, "Failed to set timezone and NTP servers from values loaded from NVS");
     }
 
-    std::string & getFreeMemory() { // TODO: dataMux lock?
+    [[nodiscard]] std::string & getFreeMemory() { // TODO: dataMux lock?
         static std::string free_memory;
         free_memory = std::to_string(ESP.getFreeHeap());
         return free_memory;
