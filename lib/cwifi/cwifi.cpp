@@ -37,59 +37,6 @@ namespace cwifi {
               using HasData::set;
 
               [[nodiscard]] std::string getWithOptLock(const std::string &key, bool noLock) const override {
-//                  std::unique_lock l(_dataMutex, std::defer_lock);
-//
-//                  switch(utils::hashstr(key.c_str())) {
-//                      case utils::hashstr(SSID): {
-//                          if(!noLock)
-//                              l.lock();
-//                          return WiFi.SSID().c_str();
-//                      }
-//                      case utils::hashstr(IP_ADDRESS): {
-//                          if(!noLock)
-//                              l.lock();
-//                          return WiFi.localIP().toString().c_str();
-//                      }
-//                      case utils::hashstr(GATEWAY): {
-//                          if(!noLock)
-//                              l.lock();
-//                          return WiFi.gatewayIP().toString().c_str();
-//                      }
-//                      case utils::hashstr(SUBNET): {
-//                          if(!noLock)
-//                              l.lock();
-//                          return WiFi.subnetMask().toString().c_str();
-//                      }
-//                      case utils::hashstr(DNS): {
-//                          if(!noLock)
-//                              l.lock();
-//                          return WiFi.dnsIP().toString().c_str();
-//                      }
-//                      case utils::hashstr(MAC_ADDRESS): {
-//                          if(!noLock)
-//                              l.lock();
-//                          return WiFi.macAddress().c_str();
-//                      }
-//                      case utils::hashstr(RSSI): {
-//                          if(!noLock)
-//                              l.lock();
-//                          return std::to_string(WiFi.RSSI());
-//                      }
-//                      default: {}
-//                  }
-//                  Logger::logw(TAG, "Invalid key %s", key.c_str());
-//                  return HasData::EMPTY_VALUE;
-
-//                  return getStringDataHelper({{SSID, WiFi.SSID()},
-//                                              {IP_ADDRESS, WiFi.localIP().toString()},
-//                                              {GATEWAY, WiFi.gatewayIP().toString()},
-//                                              {SUBNET, WiFi.subnetMask().toString()},
-//                                              {DNS, WiFi.dnsIP().toString()},
-//                                              {MAC_ADDRESS, WiFi.macAddress()},
-//                                              {RSSI, String(WiFi.RSSI())}
-//                                             },
-//                                             key, noLock);
-
                   std::unique_lock l(_dataMutex, std::defer_lock);
                   if(!noLock)
                     l.lock();
@@ -105,63 +52,14 @@ namespace cwifi {
               }
 
 
-              [[nodiscard]] bool setWithOptLockAndUpdate(const std::string &key, const std::string &value, const bool noLock, const bool doObjUpdate) override {
+              [[nodiscard]] bool setWithOptLockAndUpdate(const std::string &key, const std::string &value_raw, const bool noLock, const bool doObjUpdate) override {
                   if(std::find(readOnlyKeys.begin(), readOnlyKeys.end(), key) != readOnlyKeys.end() ||
                      std::find(keys.begin(), keys.end(), key) == keys.end()) {
                       Logger::logw(TAG, "Key %s is read-only or not found", key.c_str());
                       return false;
                   }
-
-                  bool updated = false;
-//                  static std::vector<std::string> keysToUpdateOnObj = {};
-
-//                  std::unique_lock l{_dataMutex, std::defer_lock};
-//                  switch(utils::hashstr(key.c_str())) {
-//                      case utils::hashstr(SSID): {
-//                          if(!noLock)
-//                              l.lock();
-//                          updated = new_ssid != value;
-//                          if(updated){
-    //                          new_ssid = value;
-    //                          if(updateObj)
-    //                              keysToUpdateOnObj.push_back(key);
-    //                          }
-//                          break;
-//                      }
-//                      case utils::hashstr(SSID_PASSWORD): {
-//                          if(!noLock)
-//                              l.lock();
-//                          updated = new_ssidPassword != value;
-//                          if(updated){
-//                          new_ssidPassword = value;
-                  //                          if(updateObj)
-                  //                              keysToUpdateOnObj.push_back(key);
-                  //                          }
-//                          break;
-//                      }
-//                      default: {
-        //                    Logger::logw(TAG, "Invalid key %s", key.c_str());
-        //                    return false;
-        //                }
-//                  }
-//                  if(doObjUpdate && !keysToUpdateOnObj.empty()) {
-//                      const bool objUpdated = updateObj(keysToUpdateOnObj, noLock || l.owns_lock());
-//                      if(objUpdated) {
-//                          Logger::logv(TAG, "Updated %s", utils::join(keysToUpdateOnObj, ", ").c_str());
-//                          keysToUpdateOnObj.clear();
-//                      }
-//                      return objUpdated;
-//                  }
-                  return updated;
+                  return false;
               }
-
-//              bool updateObj(const std::vector<std::string> &keys, const bool _dataAlreadyLocked) override {
-//                  // member vars already set in setWithOptLockAndUpdate(), use them to set timezone and server
-//                  bool success = resetWiFiSSID();
-//                  if(success) // don't save if new time values don't work
-//                      success &= HasData::updateObj(keys, _dataAlreadyLocked);
-//                  return success;
-//              }
       } data;
   }
 
@@ -266,8 +164,8 @@ namespace cwifi {
 
   void setWifiConfigParams(WiFiManager &wm) {
     cleanupWiFiConfigObjs();
-    for (auto setupParamObj : wiFiConfigs) {
-        for (auto param : setupParamObj->getSettingParams()) {
+    for (auto &setupParamObj : wiFiConfigs) {
+        for (auto &param : setupParamObj->getSettingParams()) {
             bool addIt = true;
             for(int i=0; i<wm.getParametersCount(); i++) {
                 if(wm.getParameters()[i] == param) {
@@ -280,6 +178,19 @@ namespace cwifi {
                 wm.addParameter(param);
             }
         }
+    }
+    for (auto &param : otherWifiConfigParams) {
+      bool addIt = true;
+      for(int i=0; i<wm.getParametersCount(); i++) {
+          if(wm.getParameters()[i] == &param) {
+              addIt = false;
+              break;
+          }
+      }
+      if(addIt) {
+          Logger::logv(TAG, "[setWifiConfigParams] Adding param: %s", param.getID());
+          wm.addParameter(&param);
+      }
     }
   }
 

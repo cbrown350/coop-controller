@@ -218,35 +218,6 @@ class LeadingEdgePhaseDimmer : public HasData<> {
         using HasData::updateObj;
         [[nodiscard]] std::string getWithOptLock(const std::string &key, const bool noLock) const override {
             Logger::logv(TAG, "[getWithOptLock] Getting %s", key.c_str());
-//            std::unique_lock l{_dataMutex, std::defer_lock};
-//            switch(utils::hashstr(key.c_str())) {
-//                case utils::hashstr(BRIGHTNESS): {
-//                    if(!noLock)
-//                        l.lock();
-//                    return std::to_string(getBrightness(true));
-//                }
-//                case utils::hashstr(RESOLUTION): {
-//                    if(!noLock)
-//                        l.lock();
-//                    return std::to_string(getResolution(true));
-//                }
-//                case utils::hashstr(FREQUENCY): {
-//                    if(!noLock)
-//                        l.lock();
-//                    return std::to_string(halfPeriod_us > 0 ? 1000000 / (2 * halfPeriod_us) : 0);
-//                }
-//                default: {}
-//            }
-//            Logger::logw(TAG, "Invalid key %s", key.c_str());
-//            return HasData::EMPTY_VALUE;
-//            std::unique_lock l(_dataMutex, std::defer_lock);
-//            if(!noLock)
-//                l.lock();
-//            return getStringDataHelper({
-//                {BRIGHTNESS, std::to_string(getBrightness(true))},
-//                {RESOLUTION, std::to_string(getResolution(true))},
-//                {FREQUENCY, std::to_string(halfPeriod_us > 0 ? 1000000 / (2 * halfPeriod_us) : 0)}
-//            }, key, noLock || noLock);
             using retType = std::string;
             using FunPtrType = retType(*)(const LeadingEdgePhaseDimmer*, const bool noLock);
             return getStringDataHelper<FunPtrType>({
@@ -258,12 +229,13 @@ class LeadingEdgePhaseDimmer : public HasData<> {
         }
 
 
-        [[nodiscard]] bool setWithOptLockAndUpdate(const std::string &key, const std::string &value, const bool noLock, const bool doObjUpdate) override {
+        [[nodiscard]] bool setWithOptLockAndUpdate(const std::string &key, const std::string &value_raw, const bool noLock, const bool doObjUpdate) override {
             if(std::find(readOnlyKeys.begin(), readOnlyKeys.end(), key) != readOnlyKeys.end() ||
                 std::find(keys.begin(), keys.end(), key) == keys.end()) {
                 Logger::logw(TAG, "Key %s is read-only or not found", key.c_str());
                 return false;
             }
+            const std::string value = utils::trim_clean(value_raw);
             Logger::logv(TAG, "[setWithOptLockAndUpdate]Setting %s to %s", key.c_str(), value.c_str());
 
             static std::vector<std::string> keysToUpdateOnObj = {};
@@ -328,40 +300,6 @@ class LeadingEdgePhaseDimmer : public HasData<> {
                     return false;
                 }
             }
-
-//            using retType = std::string;
-//            using FunPtrType = retType(*)(LeadingEdgePhaseDimmer*, const std::atomic<uint16_t>&, std::unique_lock<std::mutex> &);
-//            const auto updatedKey = getStringDataHelper<FunPtrType>({
-//                  {BRIGHTNESS, (FunPtrType)[](auto i, const auto &v, auto &l) -> retType {
-//                                                        l.lock(); need to check noLock here
-//                                                        if(i->getBrightness(true) != v) {
-//                                                            i->setBrightness(v, true);
-//                                                            return BRIGHTNESS;
-//                                                        }
-//                                                        return "";
-//                  }},
-//                  {RESOLUTION, (FunPtrType)[](auto i, const auto &v, auto &l) -> retType {
-//                                                          l.lock(); need to check noLock here
-//                                                          if(i->getResolution(true) != v) {
-//                                                              i->setResolution(v, true);
-//                                                              return RESOLUTION;
-//                                                          }
-//                                                          return "";
-//                  }},
-//               }, key, noLock || l.owns_lock(), (FunPtrType)[](auto, const auto&, auto&) -> retType { return ""; })
-//                       (this, std::stoi(value), l);
-//
-////            const auto updatedKey = setStringDataHelper<std::atomic<uint16_t>>({
-////                                    {BRIGHTNESS, _brightness},
-////                                    {RESOLUTION, _resolution}
-////                                }, key, std::stoi(value), noLock || l.owns_lock());
-//            bool updated = !updatedKey.empty();
-//            if(updated) {
-//                if (doObjUpdate) {
-//                    keysToUpdateOnObj.push_back(updatedKey);
-//                }
-//            }
-
 
             if(doObjUpdate && !keysToUpdateOnObj.empty()) {
                 const bool objUpdated = updateObj(keysToUpdateOnObj, noLock || l.owns_lock()) || updated; // include updated since vars were updated
