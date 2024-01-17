@@ -66,7 +66,8 @@
         "wmaurer.change-case",
         "yzhang.markdown-all-in-one",
         "zainchen.json",
-        "zignd.html-css-class-completion"
+        "zignd.html-css-class-completion",
+        "spencerwmiles.vscode-task-buttons"
     ],
     "unwantedRecommendations": [
         "ms-vscode.cmake-tools",

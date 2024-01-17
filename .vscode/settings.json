@@ -76,7 +76,9 @@
         "semaphore": "cpp",
         "stop_token": "cpp",
         "ranges": "cpp",
-        "span": "cpp"
+        "span": "cpp",
+        "bitset": "cpp",
+        "regex": "cpp"
     },
     // "terminal.integrated.sendKeybindingsToShell": true,
 
@@ -141,5 +143,12 @@
     "gcovViewer.buildDirectories": [
         
     ],
-    
+    "VsCodeTaskButtons.showCounter": false,
+    "VsCodeTaskButtons.tasks": [
+        {
+            "label": "$(run-above) Upload & Monitor",
+            "task": "upload-and-monitor",
+            "tooltip": "Upload and then monitor the serial output, after compiling if necessary"
+        }
+    ],
 }
