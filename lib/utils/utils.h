@@ -91,6 +91,23 @@ namespace utils {
         Logger<>::logd(TAG, "}");
     }
 
+    // creates a copy of the string, removes carriage returns, spaces, newlines, and tabs on the ends
+    // and returns the new string
+    [[nodiscard]] inline std::string trim_clean(const std::string &s) {
+        std::string str = s;
+        for(auto it = str.begin(); it != str.end(); ++it) 
+            if(*it == '\r' || *it == '\n' || *it == '\t' || *it == ' ')
+                it = str.erase(it);
+            else
+                break;
+        for(auto it = str.end()-1; it != str.begin(); --it) 
+            if(*it == '\r' || *it == '\n' || *it == '\t' || *it == ' ')
+                it = str.erase(it);
+            else
+                break;
+        return str;
+    }
+
 } // namespace utils
 
 #endif // UTILS_H_

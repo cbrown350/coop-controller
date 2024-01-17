@@ -145,3 +145,53 @@ TEST(UtilsTest, UtilsJoin) {
 
     EXPECT_EQ(str3, str4) << "incorrect join result";
 }
+
+TEST(UtilsTests, UtilsTrimClean) {
+    DesktopLogger::logd(TAG, "utils_wait_for_flag");
+
+    std::string str{"test"}; //
+    std::string str2{" test"};
+    std::string str3{"test "};
+    std::string str4{" test "};
+    std::string str5{"test test"}; //
+    std::string str6{" test test "};
+    std::string str7{" test test"};
+    std::string str8{"test test "};
+    std::string str9{" test test\n"};
+    std::string str10{"\ttest test\n"};
+    std::string str11{"\ttest test\n "};
+    std::string str12{"test test\n test"}; //
+    std::string str13{"\ttest test\n test"};
+    std::string str14{"\ttest test\n test "};
+    std::string str15{"\ttest test\n test\t"};
+    std::string str16{"\ttest test\n test\t "};
+    std::string str17{"test test\n test\t test"}; //
+    std::string str18{"\ttest test\n test\t test"};
+    std::string str19{""}; //
+    std::string str20{" "};
+    std::string str21{"\n"};
+    std::string str22{"\t"};
+
+    EXPECT_EQ(str, utils::trim_clean(str)) << "incorrect trim_clean result";
+    EXPECT_EQ(str, utils::trim_clean(str2)) << "incorrect trim_clean result";
+    EXPECT_EQ(str, utils::trim_clean(str3)) << "incorrect trim_clean result";
+    EXPECT_EQ(str, utils::trim_clean(str4)) << "incorrect trim_clean result";
+    EXPECT_EQ(str5, utils::trim_clean(str5)) << "incorrect trim_clean result";
+    EXPECT_EQ(str5, utils::trim_clean(str6)) << "incorrect trim_clean result";
+    EXPECT_EQ(str5, utils::trim_clean(str7)) << "incorrect trim_clean result";
+    EXPECT_EQ(str5, utils::trim_clean(str8)) << "incorrect trim_clean result";
+    EXPECT_EQ(str5, utils::trim_clean(str9)) << "incorrect trim_clean result";
+    EXPECT_EQ(str5, utils::trim_clean(str10)) << "incorrect trim_clean result";
+    EXPECT_EQ(str5, utils::trim_clean(str11)) << "incorrect trim_clean result";
+    EXPECT_EQ(str12, utils::trim_clean(str12)) << "incorrect trim_clean result";
+    EXPECT_EQ(str12, utils::trim_clean(str13)) << "incorrect trim_clean result";
+    EXPECT_EQ(str12, utils::trim_clean(str14)) << "incorrect trim_clean result";
+    EXPECT_EQ(str12, utils::trim_clean(str15)) << "incorrect trim_clean result";
+    EXPECT_EQ(str12, utils::trim_clean(str16)) << "incorrect trim_clean result";
+    EXPECT_EQ(str17, utils::trim_clean(str17)) << "incorrect trim_clean result";
+    EXPECT_EQ(str17, utils::trim_clean(str18)) << "incorrect trim_clean result";
+    EXPECT_EQ(str19, utils::trim_clean(str19)) << "incorrect trim_clean result";
+    EXPECT_EQ(str19, utils::trim_clean(str20)) << "incorrect trim_clean result";
+    EXPECT_EQ(str19, utils::trim_clean(str21)) << "incorrect trim_clean result";
+    EXPECT_EQ(str19, utils::trim_clean(str22)) << "incorrect trim_clean result";
+}
