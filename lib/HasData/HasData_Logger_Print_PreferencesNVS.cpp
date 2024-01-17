@@ -50,9 +50,11 @@ bool HasData<>::loadNvsData() {
             const bool wasUpdated = setWithOptLockAndUpdate(key, value, true, false);
 //            keysUpdated |= wasUpdated;
             if(!wasUpdated)
-                Logger::loge(getTag(), "Failed to load %s = %s", key.c_str(), value.c_str());
+                Logger::loge(getTag(), "Failed to set loaded %s = %s (may have not changed)", key.c_str(), value.c_str());
             else
-                Logger::logv(getTag(), "Loaded %s = %s", key.c_str(), value.c_str());
+                Logger::logv(getTag(), "Loaded and set %s = %s", key.c_str(), value.c_str());
+        } else {
+            Logger::logv(getTag(), "Skipping key %s, either not in NVS or read-only", key.c_str());
         }
     }
     nvs.end();
