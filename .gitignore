@@ -123,3 +123,6 @@ fabric.properties
 # *.ipr
 /.idea/misc.xml
 /.idea/git_toolbox_prj.xml
+/.idea/httpRequests/http-requests-log.http
+/.idea/httpRequests/http-client.cookies
+/.idea/httpRequests/*.json

@@ -1,0 +1,3 @@
+<component name="DependencyValidationManager">
+  <scope name="Tests" pattern="(file[code]:test/**/*.h||file[code]:test/**/*.cpp)&amp;&amp;!file[code]:*" />
+</component>
