@@ -51,7 +51,7 @@ class Logger {
         Logger() = default;
 
 #if defined(ARDUINO)
-        inline static T *defaultPrintStream = &Serial;
+        inline static T *defaultPrintStream = &Serial; // NOLINT - will be available in Arduino
 #else
         inline static T *defaultPrintStream;
 #endif
@@ -101,6 +101,17 @@ class Logger {
             tagLevels[tag] = level;
 #else
             (void)tag;
+            (void)level;
+#endif
+        }
+
+        static void setTagsLevel(const std::vector<std::string> &tags, const unsigned level) {
+#ifdef ENABLE_LOGGING
+            std::scoped_lock l(logMutex);
+            for(auto const &tag : tags)
+                tagLevels[tag] = level;
+#else
+            (void)tags;
             (void)level;
 #endif
         }

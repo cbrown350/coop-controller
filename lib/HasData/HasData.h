@@ -124,7 +124,7 @@ class HasData {
         [[nodiscard]] T getStringDataHelper(const std::map<const std::string, const T&> &keyVarPairs,
                                             const std::string &key, const bool noLock, const T& defaultVal = HasData::EMPTY_VALUE) const {
             if(keyVarPairs.find(key) == keyVarPairs.end()) {
-                Logger::logw(getTag(), "Invalid key '%s', not found", key.c_str());
+                Logger::logv(getTag(), "Invalid key '%s', not found", key.c_str());
                 return defaultVal;
             }
 
@@ -139,7 +139,7 @@ class HasData {
             std::any varPtr;
             using FuncType = bool(*)(const std::string &key, std::any varPtr, const std::string &value);
             FuncType converterSetter;
-            VarHolder(std::any varPtr, FuncType converterSetter = nullptr) : varPtr(std::move(varPtr)), converterSetter(converterSetter) { }
+            VarHolder(std::any varPtr, FuncType converterSetter = nullptr) : varPtr(std::move(varPtr)), converterSetter(converterSetter) { } // NOLINT(google-explicit-constructor) want to able to easily instantiate
         };
 
         [[nodiscard]] inline static bool setStringDataHelperStringSetter(std::any &varPtr, const std::string &value) {
@@ -173,7 +173,7 @@ class HasData {
             }
             auto keyVarHolderPairs = std::move(keyVarHolderPairs_);
             if(keyVarHolderPairs.find(key) == keyVarHolderPairs.end()) {
-                Logger::logw(getTag(), "Invalid key '%s', not found", key.c_str());
+                Logger::logv(getTag(), "Invalid key '%s', not found", key.c_str());
                 return "";
             }
 
