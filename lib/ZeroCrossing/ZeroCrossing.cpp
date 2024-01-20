@@ -5,51 +5,61 @@
 
 #include <Logger.h>
 
-#include <string>
-#include <algorithm>
+#include <freertos/task.h>
 
-ZeroCrossing::ZeroCrossing(const std::string &instanceID) :
-            HasData(instanceID) {
-        std::scoped_lock l(instancesMutex);
-        if(instancesISRs.empty()) {
-            xTaskCreatePinnedToCore(
-                    init,       //Function to implement the task
-                    "ZroXg_Init", //Name of the task (16 chars max)
-                    3192,       //Stack size in words
-                    this,       //Task input parameter
-                    0,          //Priority of the task
-                    nullptr,       //Task handle.
-                    1);
-        }
+
+void ZeroCrossing::isrInit() {
+    Logger::logv(getTag(), "[isrInit] Starting zeroCrossingISRInit task");
+    xTaskCreatePinnedToCore(
+            zeroCrossingISRInit,       //Function to implement the task
+            getTag(), //Name of the task (16 chars max)
+            3192,       //Stack size in words
+            this,       //Task input parameter
+            0,          //Priority of the task
+            nullptr,       //Task handle.
+            1);
 }
 
-void ZeroCrossing::init(void* instance) {
+void ZeroCrossing::zeroCrossingISRInit(void* instance) {
+    Logger::logv(((ZeroCrossing *) instance)->getTag(), "[zeroCrossingISRInit] starting");
 #ifdef XC_GPIO_DEBUG_OUT      
       pinMode(XC_GPIO_DEBUG_OUT, OUTPUT);
 #endif
 #ifdef TIMER_GPIO_DEBUG_OUT      
       pinMode(TIMER_GPIO_DEBUG_OUT, OUTPUT);
 #endif
-    std::scoped_lock l(instancesMutex);
-    ((ZeroCrossing*)instance)->addInstanceTimerISR();
+    {   // extra scope block needed since vTaskDelete doesn't call destructors as you would expect, no scope unlock
+        std::scoped_lock l(instancesMutex);
+        Logger::logv(((ZeroCrossing *) instance)->getTag(), "[zeroCrossingISRInit] Adding instance %p", instance);
+        Logger::logv(((ZeroCrossing *) instance)->getTag(), "[zeroCrossingISRInit] Total instances before adding: %d",
+                     instancesISRs.size());
+        if (instancesISRs.empty() && instance != nullptr) {
+            // using lower level drivers to be able to set flags for ISRs
 
-    // using lower level drivers to be able to set flags for ISRs
+            gpio_pad_select_gpio(ZERO_CROSS_IN_B);
+            gpio_set_direction(ZERO_CROSS_IN_B, GPIO_MODE_INPUT);
+            gpio_pullup_en(ZERO_CROSS_IN_B);
+            gpio_pulldown_dis(ZERO_CROSS_IN_B);
+            gpio_set_intr_type(ZERO_CROSS_IN_B, GPIO_INTR_NEGEDGE);
+            gpio_install_isr_service(ESP_INTR_FLAG_IRAM | ESP_INTR_FLAG_LEVEL3);
+            gpio_isr_handler_add(ZERO_CROSS_IN_B, ZeroCrossing::zeroXPulseISR, nullptr);
+            gpio_intr_enable(ZERO_CROSS_IN_B);
+            Logger::logv(TAG, "[init] ZERO_CROSS_IN_B: %d", ZERO_CROSS_IN_B);
 
-    gpio_pad_select_gpio(ZERO_CROSS_IN_B);
-    gpio_set_direction(ZERO_CROSS_IN_B, GPIO_MODE_INPUT);
-    gpio_pullup_en(ZERO_CROSS_IN_B);
-    gpio_pulldown_dis(ZERO_CROSS_IN_B);
-    gpio_set_intr_type(ZERO_CROSS_IN_B, GPIO_INTR_NEGEDGE);
-    gpio_install_isr_service(ESP_INTR_FLAG_IRAM | ESP_INTR_FLAG_LEVEL3);
-    gpio_isr_handler_add(ZERO_CROSS_IN_B, ZeroCrossing::zeroXPulseISR,nullptr);
-    gpio_intr_enable(ZERO_CROSS_IN_B);
-    Logger::logv(TAG, "[init] ZERO_CROSS_IN_B: %d", ZERO_CROSS_IN_B);
-
-    Timer0_Cfg = timerBegin(0, 80, true); // 80MHz / 80 divider = 1MHz
-    timerAttachInterruptFlag(Timer0_Cfg, &ZeroCrossing::timerISR, true, ESP_INTR_FLAG_IRAM | ESP_INTR_FLAG_LEVEL3);
-    timerAlarmWrite(Timer0_Cfg, TIMER_TICK_US, true);
-    timerAlarmEnable(Timer0_Cfg);
-    Logger::logv(TAG, "[init] Timer0_Cfg: %p", Timer0_Cfg);
+            Timer0_Cfg = timerBegin(0, 80, true); // 80MHz / 80 divider = 1MHz
+            timerAttachInterruptFlag(Timer0_Cfg, &ZeroCrossing::timerISR, true,
+                                     ESP_INTR_FLAG_IRAM | ESP_INTR_FLAG_LEVEL3);
+            timerAlarmWrite(Timer0_Cfg, TIMER_TICK_US, true);
+            timerAlarmEnable(Timer0_Cfg);
+            Logger::logv(TAG, "[init] Timer0_Cfg: %p", Timer0_Cfg);
+        }
+        if (instance != nullptr) {
+            ((ZeroCrossing *) instance)->addInstanceTimerISR();
+            Logger::logv(((ZeroCrossing *) instance)->getTag(), "[zeroCrossingISRInit] Added instance %p", instance);
+            Logger::logv(((ZeroCrossing *) instance)->getTag(), "[zeroCrossingISRInit] Total instances: %d",
+                         instancesISRs.size());
+        }
+    }
 
     vTaskDelete(nullptr);
 }
@@ -65,7 +75,7 @@ void ZeroCrossing::deinit() {
 
 ZeroCrossing::~ZeroCrossing() {
     std::scoped_lock l(instancesMutex);
-    instancesISRs.erase(std::remove_if(instancesISRs.begin(), instancesISRs.end(), [this](const auto &instanceISR) {
+    instancesISRs.erase(std::remove_if(instancesISRs.begin(), instancesISRs.end(), [this](const auto& instanceISR) {
         return instanceISR.first == this;
     }), instancesISRs.end());
     if(instancesISRs.empty())

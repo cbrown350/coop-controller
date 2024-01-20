@@ -9,9 +9,11 @@ LeadingEdgePhaseDimmer::LeadingEdgePhaseDimmer(const std::string &instanceID, co
             _triacPin(triacPin),
             _triacPinPolarityInverted(triacPinPolarityInverted) {
 
-        setResolution(resolution);
-        pinMode(_triacPin, OUTPUT);
-        digitalWrite(_triacPin, LOW ^ _triacPinPolarityInverted);
+    setResolution(resolution);
+    pinMode(_triacPin, OUTPUT);
+    digitalWrite(_triacPin, LOW ^ _triacPinPolarityInverted);
+
+    isrInit();
 }
 
 LeadingEdgePhaseDimmer::~LeadingEdgePhaseDimmer() {

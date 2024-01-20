@@ -10,6 +10,8 @@ PulseSkipModulationDimmer::PulseSkipModulationDimmer(const std::string &instance
     setCycles(cycles);
     pinMode(_triacPin, OUTPUT);
     digitalWrite(_triacPin, LOW ^ _triacPinPolarityInverted);
+
+    isrInit();
 }
 
 PulseSkipModulationDimmer::~PulseSkipModulationDimmer() {

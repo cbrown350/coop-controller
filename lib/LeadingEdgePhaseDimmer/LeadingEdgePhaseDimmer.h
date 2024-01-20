@@ -62,7 +62,7 @@ class LeadingEdgePhaseDimmer : public ZeroCrossing {
 
         static void IRAM_ATTR timerISRCall(ZeroCrossing* instance, unsigned currCyclePercentage);
         void addInstanceTimerISR() override {
-            InstanceISRFunc timerISR = &timerISRCall;
+            InstanceISRFunc timerISR = &LeadingEdgePhaseDimmer::timerISRCall;
             instancesISRs.emplace_back(this, timerISR);
         }
 

@@ -29,7 +29,7 @@ class ZeroCrossing : public HasData<> {
         inline static constexpr DRAM_ATTR unsigned minFreq = *std::min_element(std::begin(VALID_FREQUENCIES_HZ), std::end(VALID_FREQUENCIES_HZ));
         inline static constexpr DRAM_ATTR unsigned maxFreq = *std::max_element(std::begin(VALID_FREQUENCIES_HZ), std::end(VALID_FREQUENCIES_HZ));
 
-        explicit ZeroCrossing(const std::string &instanceID);
+        explicit ZeroCrossing(const std::string &instanceID) : HasData(instanceID) { };
         ~ZeroCrossing() override;
 
         [[nodiscard]] const char * getTag() const override { return TAG; }
@@ -69,13 +69,15 @@ public:
         inline static std::mutex instancesMutex{};
 
         // Can't use virtual functions in IRAM, must save them in init() for instances
-        virtual void addInstanceTimerISR() = 0;
         using InstanceISRFunc = void(*)(ZeroCrossing* instance, const unsigned currCyclePercentage);
-        inline static std::vector<std::pair<ZeroCrossing*, InstanceISRFunc>> instancesISRs{};
+        inline static std::vector<std::pair<ZeroCrossing*, InstanceISRFunc>> instancesISRs{}; // vectors are ISR safe (IRAM)
 
 
         // methods
-        static void init(void* instance);
+        virtual void addInstanceTimerISR() = 0;
+        // Must be called by child class to set up ISRs
+        void isrInit();
+        static void zeroCrossingISRInit(void* instance);
         static void deinit();
 
         static constexpr int IRAM_ATTR abs(int x) {

@@ -53,7 +53,7 @@ private:
      */
     static void IRAM_ATTR timerISRCall(ZeroCrossing* instance, unsigned currCyclePercentage);
     void addInstanceTimerISR() override {
-        InstanceISRFunc timerISR = &timerISRCall;
+        InstanceISRFunc timerISR = &PulseSkipModulationDimmer::timerISRCall;
         instancesISRs.emplace_back(this, timerISR);
     }
 
